@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event</title>
+</head>
+<body>
+    <form action="/event-api" method="POST">
+        Event Title:<input type="text" name="title"><br/><br/>
+        Event Category:<select name="mycategory">
+            <option value="">---Select Category---</option>
+            <option value="Music">Music</option>
+            <option value="Comedy">Comedy</option>
+            <option value="Workshops">Workshops</option>
+            <option value="Sports">Sports</option>
+            <option value="Festivals">Festivals</option>
+        </select><br><br>
+        eventImage:<input type="text" name="eventImage"><br><br>
+        Date:<input type="date" name="date"><br><br>
+        Time:<input type="time" name="time"><br><br>
+        Venue:<input type="text" name="venue"><br><br>
+        Area:<input type="text" name="area"><br><br>
+        Price:<input type="Number" name="price"><br><br>
+        Totalseats:<input type="Number" name="totalseats"><br><br>
+        Seats:<input type="Number" name="seats"><br><br>
+        Event Description:<textarea name="description"></textarea><br/><br/>
+        Rating:<input type="Number" name="rating" step="0.1" min="0" max="5"><br><br>
+        Reviews:<input type="Number" name="reviews"><br><br>
+        isTrending:<input type="checkbox" name="isTrending" value="true">
+        isLive:<input type="checkbox" name="isLive" value="true">
+        isLoved:<input type="checkbox" name="isLoved" value="true"><br><br>
+        whatToExpect:<textarea name="whatToExpect"></textarea><br><br>
+        Note:<input type="text" name="note"><br><br>
+        <button  type="submit">Add Event Details</button>
+    </form>
+</body>
+</html>
