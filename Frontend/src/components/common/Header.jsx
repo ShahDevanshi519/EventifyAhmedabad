@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from "react"
-import { Link } from "react-router-dom"
+import { Link,useNavigate } from "react-router-dom"
 import { Search, MapPin, ChevronDown, Menu, X } from "lucide-react"
 import LocationModal from "./LocationModal"
+
 
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [showLocationModal, setShowLocationModal] = useState(false)
   const [selectedLocation, setSelectedLocation] = useState("Ahmedabad")
   const [showMobileMenu, setShowMobileMenu] = useState(false)
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 50)
@@ -18,6 +20,7 @@ export default function Header() {
   const categories = ["Music","Comedy","Workshops","Sports","Festivals"]
 
  const areas = [
+  "Ahmedabad",
   "AshramRoad",
   "Bapunagr",
   "Bodakdev",
@@ -202,6 +205,12 @@ export default function Header() {
           onSelect={(a) => {
             setSelectedLocation(a)
             setShowLocationModal(false)
+            if (a === "Ahmedabad") {
+                navigate("/all-events");
+            } else {
+                navigate(`/events/${a.toLowerCase()}`);
+            }
+
           }}
           onClose={() => setShowLocationModal(false)}
         />

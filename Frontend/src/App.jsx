@@ -35,6 +35,16 @@ export default function App() {
             </MainLayout>
           }
         />
+         
+         <Route
+          path="/events/:area"
+          element={
+            <MainLayout>
+              <AllEvents />
+            </MainLayout>
+           }
+          />
+
         <Route
           path="/event/:eventId"
           element={

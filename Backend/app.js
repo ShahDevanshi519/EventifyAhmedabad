@@ -211,6 +211,15 @@ app.get('/upcoming-event',(req,res) => {
     .catch((err) => res.json(err))
 })
 
+// Area wise filter
+app.get('/events/area/:area',(req,res) => {
+    let area = req.params.area;
+    area = area.charAt(0).toUpperCase() + area.slice(1);
+    EventTb.find({area})
+    .then((data) => res.json(data))
+    .catch((err) => res.json(err))
+})
+
 // Contact Page
 app.post('/contact-api', (req, res) => {
   const name = req.body.name;
