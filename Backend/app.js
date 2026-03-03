@@ -2,14 +2,20 @@ const express = require('express');
 const app = express();
 const cors = require('cors');
 const mongoose = require('mongoose');
+const fileupload = require('express-fileupload');
 const port = 3000;
 
 // Import Module
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Fileupload 
+app.use(fileupload());
+
 // Frontend and Backend Connection
 app.use(cors());
+
 // When you use EJs TemplateEngine in Your Project
 app.set('views',__dirname+'/views');
 app.set('view engine','ejs');
@@ -93,41 +99,45 @@ app.get('/event',(req,res) => {
 })
 
 // Event Post API
-app.post('/event-api',(req,res) => {
+app.post('/event-api', (req, res) => {
+
+    const image = req.files.eventImage;
+
+    const category = req.body.mycategory;
+
+    const imageName = image.name;
+    
+    image.mv("public/Images/" + category + "/" + imageName);
 
     const whatToExpectArray = req.body.whatToExpect
-        ? req.body.whatToExpect
-            .split(/,|\r?\n/)         
-            .map(item => item.trim())  
-            .filter(item => item.length > 0)
+        ? req.body.whatToExpect.split(/,|\r?\n/)
         : [];
 
-    const myobj  = {
-        title:req.body.title,
-        category:req.body.mycategory,
-        eventImage:'/Images/' + req.body.mycategory + '/' + req.body.eventImage,
-        date:req.body.date,
-        time:req.body.time,
-        venue:req.body.venue,
-        area:req.body.area,
-        price:req.body.price,
-        totalseats:req.body.totalseats,
-        seats:req.body.seats,
-        description:req.body.description,
-        rating:req.body.rating,
-        reviews:req.body.reviews,
-        isTrending:req.body.isTrending === "true",
-        isLive:req.body.isLive === "true",
-        isLoved:req.body.isLoved === "true",
-        whatToExpect:whatToExpectArray,
-        note:req.body.note,  
-    }
-    EventTb.create(myobj) 
-    .then(() => res.json({flag:1,msg:"Event Addedd Successfully"}))
-    .catch((err) => {
-        console.log("Err",err);
-        res.json({flag:0,msg:err.message})})
-})
+    const myobj = {
+        title: req.body.title,
+        category: category,
+        eventImage: "/Images/" + category + "/" + imageName,
+        date: req.body.date,
+        time: req.body.time,
+        venue: req.body.venue,
+        area: req.body.area,
+        price: req.body.price,
+        totalseats: req.body.totalseats,
+        seats: req.body.seats,
+        description: req.body.description,
+        rating: req.body.rating,
+        reviews: req.body.reviews,
+        isTrending: req.body.isTrending === "true",
+        isLive: req.body.isLive === "true",
+        isLoved: req.body.isLoved === "true",
+        whatToExpect: whatToExpectArray,
+        note: req.body.note
+    };
+
+    EventTb.create(myobj)
+        .then(() => res.json({ flag: 1, msg: "Event Added Successfully" }))
+        .catch(() => res.json({ flag: 0, msg: "Error" }));
+});
 
 // Display AllEvents
 app.get('/display-event',(req,res) => {

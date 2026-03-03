@@ -5,17 +5,22 @@ export default function AddEvent() {
   const [event,setEvent] = useState({});
 
   const handleSubmit = (e) => {
-    e.preventDefault();
-    axios.post("http://localhost:3000/event-api",event)
-    .then(res => {
-      console.log(res)
+  e.preventDefault();
+
+  const formData = new FormData();
+
+  for (let key in event) {
+    formData.append(key, event[key]);
+  }
+
+  axios.post("http://localhost:3000/event-api", formData)
+    .then(() => {
       alert("Event Added Successfully");
     })
-    .catch(err => {
-        console.log(err)
-        alert("Error Handling In Event")
-      })
-  }
+    .catch(() => {
+      alert("Error Handling In Event");
+    });
+};
   
   return (
     <div className="p-10 bg-gray-50 min-h-screen">
@@ -51,7 +56,7 @@ export default function AddEvent() {
           </select>
           
           {/* Event Image */}
-          <><input type="text" name="eventImage" placeholder="EventImage" onChange={(e) => {setEvent({...event,eventImage:e.target.value})}} className="w-full bg-white border border-gray-200 p-4 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-400 transition placeholder-gray-400"/></>
+          <input type="file" name="eventImage" onChange={(e) => setEvent({ ...event, eventImage: e.target.files[0] })} className="w-full bg-white border border-gray-200 p-4 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-400 transition placeholder-gray-400"/>
 
           {/* Date & Time */}
           <div className="grid grid-cols-2 gap-4">
