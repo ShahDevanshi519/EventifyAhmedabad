@@ -3,19 +3,47 @@ import { Link,useNavigate } from "react-router-dom"
 import { Search, MapPin, ChevronDown, Menu, X } from "lucide-react"
 import LocationModal from "./LocationModal"
 
-
 export default function Header() {
+
   const [isScrolled, setIsScrolled] = useState(false)
   const [showLocationModal, setShowLocationModal] = useState(false)
   const [selectedLocation, setSelectedLocation] = useState("Ahmedabad")
   const [showMobileMenu, setShowMobileMenu] = useState(false)
+
+  const [userName,setUserName] = useState(localStorage.getItem("userName"))
+
   const navigate = useNavigate();
 
   useEffect(() => {
+
     const handleScroll = () => setIsScrolled(window.scrollY > 50)
     window.addEventListener("scroll", handleScroll)
-    return () => window.removeEventListener("scroll", handleScroll)
+
+    const checkUser = () => {
+      setUserName(localStorage.getItem("userName"))
+    }
+
+    checkUser()
+
+    window.addEventListener("storage", checkUser)
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll)
+      window.removeEventListener("storage", checkUser)
+    }
+
   }, [])
+
+  const handleLogout = () => {
+
+    localStorage.removeItem("userName")
+    localStorage.removeItem("userId")
+
+    setUserName(null)
+
+    window.location.href="/"
+
+  }
 
   const categories = ["Music","Comedy","Workshops","Sports","Festivals"]
 
@@ -159,24 +187,40 @@ export default function Header() {
                       : "bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:scale-105"
                   }`}
                 >
-                  Account
+                  {userName ? userName : "Account"}
                 </button>
 
                 <div className="absolute right-0 pt-2 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition">
                   <div className="glass rounded-xl shadow p-3">
-                    <Link to="/signin" className="block px-4 py-1 hover:bg-purple-100 rounded">Sign In</Link>
-                    <Link to="/signup" className="block px-3 py-1 hover:bg-purple-100 rounded">Sign Up</Link>
+
+                    {!userName ? (
+                      <>
+                        <Link to="/signin" className="block px-4 py-1 hover:bg-purple-100 rounded">Sign In</Link>
+                        <Link to="/signup" className="block px-4 py-1 hover:bg-purple-100 rounded">Sign Up</Link>
+                      </>
+                    ) : (
+                      <>
+                        <Link to="/dashboard" className="block px-4 py-1 hover:bg-purple-100 rounded">Dashboard</Link>
+                        <button onClick={handleLogout} className="block px-4 py-1 w-full text-left hover:bg-purple-100 rounded">
+                          Logout
+                        </button>
+                      </>
+                    )}
+
                     <Link to="/contact" className="block px-4 py-1 hover:bg-purple-100 rounded">Contact</Link>
                     <Link to="/about" className="block px-4 py-1 hover:bg-purple-100 rounded">About</Link>
+
                   </div>
                 </div>
               </div>
+
             </div>
 
             {/* Mobile Menu Button */}
             <button onClick={() => setShowMobileMenu(!showMobileMenu)} className="lg:hidden">
               {showMobileMenu ? <X /> : <Menu />}
             </button>
+
           </div>
 
           {/* Mobile Menu */}
@@ -185,15 +229,30 @@ export default function Header() {
               <button onClick={() => setShowLocationModal(true)} className="hover:text-pink-600 transition">
                 {selectedLocation}
               </button>
+
               <Link to="/all-events" className="block hover:text-pink-600 transition">All Events</Link>
+
               {categories.map(cat => (
                 <Link key={cat} className="block hover:text-pink-600 transition">
                   {cat}
                 </Link>
               ))}
-              <Link to="/signin" className="block hover:text-pink-600 transition">Sign In</Link>
+
+              {!userName ? (
+                <>
+                  <Link to="/signin" className="block hover:text-pink-600 transition">Sign In</Link>
+                  <Link to="/signup" className="block hover:text-pink-600 transition">Sign Up</Link>
+                </>
+              ) : (
+                <>
+                  <Link to="/dashboard" className="block hover:text-pink-600 transition">Dashboard</Link>
+                  <button onClick={handleLogout} className="block hover:text-pink-600 transition">Logout</button>
+                </>
+              )}
+
             </div>
           )}
+
         </div>
       </header>
 
@@ -205,6 +264,7 @@ export default function Header() {
           onSelect={(a) => {
             setSelectedLocation(a)
             setShowLocationModal(false)
+
             if (a === "Ahmedabad") {
                 navigate("/all-events");
             } else {

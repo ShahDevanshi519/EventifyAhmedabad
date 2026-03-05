@@ -7,6 +7,7 @@ import ViewInquiry from "./pages/contact/ViewInquiry";
 import AddEvent from "./pages/events/AddEvent";
 import ViewEvents from "./pages/events/ViewEvents";
 import ChangePassword from "./pages/settings/ChangePassword";
+import ViewBooking from "./pages/booking/ViewBooking";
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
           <Route path="contact" element={<ViewInquiry />} />
           <Route path="events/add" element={<AddEvent />} />
           <Route path="events/view" element={<ViewEvents />} />
+          <Route path="booking" element={<ViewBooking />}/>
           <Route path="settings/change-password" element={<ChangePassword />} />
         </Route>
       </Routes>

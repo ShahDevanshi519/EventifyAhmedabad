@@ -64,10 +64,12 @@ export default function SignIn() {
     .then(res => {
       if(res.data.flag == 1){
         localStorage.setItem("userName",res.data.fullName);
+        localStorage.setItem("userId",res.data.userId);
         console.log("data",res.data);
         setLoginSuccess(true);
          setTimeout(() => {
           navigate('/dashboard');
+          window.location.reload();
           }, 1500);
       }else{
         alert(res.data.msg);

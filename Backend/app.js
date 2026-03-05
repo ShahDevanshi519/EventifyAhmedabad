@@ -27,6 +27,7 @@ const UserTb = require('./models/UserSchema');
 const EventTb = require('./models/EventSchema');
 const AdminTb = require('./models/MyAdminSchema');
 const ContactTb = require('./models/ContactSchema');
+const BookingTb = require('./models/BookingSchema');
 
 // Open Connection
 mongoose.connect("mongodb://127.0.0.1:27017/Eventifyamd")
@@ -58,7 +59,6 @@ app.post('/admin-login',(req,res) => {
         }
     })
     .catch((err) => res.json(err.message))
-
 })
 
 // Register
@@ -82,7 +82,7 @@ app.post('/login-api',(req,res) => {
     .then(data => {
         if(data){
             if(data.password == password){
-                res.json({flag:1,msg:'Login success',fullName:data.fullName});
+                res.json({flag:1,msg:'Login success',fullName:data.fullName,userId:data._id});
             }else{
                 res.json({flag:0,msg:'Login faild'});
             }
@@ -321,6 +321,20 @@ app.get("/event/category/:category",(req,res) => {
     EventTb.find({category:{ $regex: new RegExp(`^${category}$`, "i") }})
     .then((data) => res.json(data))
     .catch((err) => res.json({msg:err.message}))
+})
+
+// Booking API
+app.post('/booking',(req,res) => {
+    BookingTb.create(req.body)
+    .then((data) => res.json({flag:1,msg:"Booking Done Successfully",booking:data}))
+    .catch((err) => res.json({flag:0,msg:"Booking Is Not Done",error:err.message}))
+})
+
+// Booking Display
+app.get('/display-booking',(req,res) => {
+    BookingTb.find()
+    .then((data) => res.json(data))
+    .catch((err) => res.json(err))
 })
 
 app.get('/',(req,res) => {

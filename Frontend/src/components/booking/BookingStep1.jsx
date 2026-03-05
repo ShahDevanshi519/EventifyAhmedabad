@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { User, Mail, Phone } from 'lucide-react';
+import axios from 'axios';
 
 export default function BookingStep1({ event, seatCount, onNext }) {
   const [formData, setFormData] = useState({
@@ -19,7 +20,30 @@ export default function BookingStep1({ event, seatCount, onNext }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onNext({ userDetails: formData });
+
+    const userId = localStorage.getItem("userId");
+    if(!userId){
+      window.location.href = '/signin';
+      return;
+    }
+
+    const bookingdata = {
+      userId,
+      eventId:event._id,
+      numberOfTickets:seatCount,
+      totalAmount:seatCount * event.price,
+    }
+
+    axios.post("http://localhost:3000/booking",bookingdata)
+    .then((res) => {
+      if(res.data.flag === 1){
+        alert("Booking Successfuly");
+      }else{
+        alert("Booking Failed");
+      }
+    }).catch((err) => console.log(err))
+
+    onNext(bookingdata);
   };
 
   return (

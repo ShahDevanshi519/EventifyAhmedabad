@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { CreditCard, DollarSign } from 'lucide-react';
+// import axios from 'axios';
 
 export default function BookingStep2({ event, seatCount, totalAmount, onNext }) {
   const [paymentMethod, setPaymentMethod] = useState('card');
@@ -20,6 +21,7 @@ export default function BookingStep2({ event, seatCount, totalAmount, onNext }) 
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
     onNext({ paymentDetails: { method: paymentMethod, ...cardData } });
   };
 

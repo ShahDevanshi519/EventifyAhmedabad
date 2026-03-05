@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { Check, Download, Share2, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
+
 export default function BookingStep3({ event, seatCount, totalAmount, bookingData, onClose }) {
   const navigate = useNavigate();
   // eslint-disable-next-line react-hooks/purity

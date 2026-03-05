@@ -108,6 +108,19 @@ export default function Sidebar() {
           </div>
         </div>
 
+        {/* Booking */}
+        <NavLink
+          to="/admin/booking"
+          className={({ isActive }) =>
+            `${linkStyle} ${
+              isActive ? "bg-purple-50 text-purple-700 shadow-lg scale-105" : "text-gray-600"
+            }`
+          }
+        >
+          <Users size={20} />
+          Booking
+        </NavLink>
+
         {/* Settings */}
         <NavLink
           to="/admin/settings/change-password"
