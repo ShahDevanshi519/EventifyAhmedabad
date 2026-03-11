@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import { Mail, Phone, MapPin, Building, Camera } from 'lucide-react';
+import axios from 'axios';
+import {useNavigate} from 'react-router-dom';
 
 export default function EditProfile({ user, setUser }) {
 
   const [formData, setFormData] = useState({
-    firstName: user.firstName || '',
+    fullName: user.fullName || '',
     lastName: user.lastName || '',
     email: user.email || '',
     phone: user.phone || '',
@@ -14,6 +16,8 @@ export default function EditProfile({ user, setUser }) {
     profileImage: user.profileImage || '',
   });
 
+  const navigate = useNavigate();
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -22,19 +26,130 @@ export default function EditProfile({ user, setUser }) {
     const file = e.target.files[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setFormData({ ...formData, profileImage: reader.result });
-    };
-    reader.readAsDataURL(file);
+    setFormData({
+      ...formData,
+      profileImage:file
+    })
   };
+
+  
+
+  
+
+  useEffect(() => {
+
+    const token = localStorage.getItem("AccessToken");
+
+    if(!token){
+    navigate('/signin');
+    return;
+   }
+    axios.get("http://127.0.0.1:3000/editprofile/fetchdata",{
+      headers:{
+        Authorization:`Bearer ${token}`
+      }
+    }).then((res) => setFormData(res.data))
+    .catch((err) => {
+      if(err.response?.status === 401){
+        const refreshToken = localStorage.getItem("RefreshToken");
+
+        if(!refreshToken){
+          alert("Your Session Is Expired,Please Do Logout and Login Again");
+          localStorage.clear();
+          navigate('/signin');
+          return;
+        }
+
+        axios.post("http://127.0.0.1:3000/refreshToken",{refreshToken})
+        .then((res) => {
+          const newAccessToken = res.data.access_token;
+
+          localStorage.setItem("AccessToken",newAccessToken);
+          return axios.get("http://127.0.0.1:3000/editprofile/fetchdata",{
+            headers:{
+              Authorization:`Bearer ${newAccessToken}`
+            }
+          });
+        }).then((res) => setFormData(res.data))
+        .catch((err) => {
+          console.log(err);
+          alert("Your Session Is Expired,Please Do Logout and Login Again");
+          localStorage.clear();
+          navigate('/signin');
+        })
+      }
+    })
+  },[])
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const updatedUser = { ...user, ...formData, isLoggedIn: true };
-    localStorage.setItem('user', JSON.stringify(updatedUser));
-    setUser(updatedUser);
-    alert('✅ Profile updated successfully!');
+
+    const token = localStorage.getItem("AccessToken");
+
+    if(!token){
+      navigate('signin');
+      return;
+    }
+
+    const myformData = new FormData();
+
+    myformData.append("fullName",formData.fullName);
+    myformData.append("lastName",formData.lastName);
+    myformData.append("email",formData.email);
+    myformData.append("phone",formData.phone);
+    myformData.append("address",formData.address);
+    myformData.append("city",formData.city);
+    myformData.append("zip",formData.zip);
+    myformData.append("profileImage",formData.profileImage);
+
+    axios.post("http://127.0.0.1:3000/editprofile/",myformData,{
+      headers:{
+        Authorization:`Bearer ${token}`,
+        "Content-Type":"multipart/form-data"
+      }
+    }).then((res) => {
+      if(res.data.flag === 1){
+        alert(res.data.msg);
+      }else{
+        alert(res.data.msg);
+      }
+    }).catch((err) => {
+      if(err.response?.status === 401){
+        const refreshToken = localStorage.getItem("RefreshToken");
+
+        if(!refreshToken){
+          alert("Your Session Is Expired,Please Do Logout and Login Again");
+          localStorage.clear();
+          navigate('/signin');
+          return;
+        }
+
+        axios.post("http://127.0.0.1:3000/refreshToken",{refreshToken})
+        .then((res) => {
+          const newAccessToken = res.data.access_token;
+
+          localStorage.setItem("AccessToken",newAccessToken);
+          return axios.get("http://127.0.0.1:3000/editprofile",myformData,{
+            headers:{
+              Authorization:`Bearer ${newAccessToken}`,
+              "Content-Type":"multipart/form-data"
+            }
+          });
+        }).then((res) => {
+          if(res.data.flag === 1){
+            alert(res.data.msg);
+          }else{
+            alert(res.data.msg);
+          }
+        })
+        .catch((err) => {
+          console.log(err);
+          alert("Your Session Is Expired,Please Do Logout and Login Again");
+          localStorage.clear();
+          navigate('/signin');
+        })
+      }
+    })
   };
 
   return (
@@ -46,13 +161,13 @@ export default function EditProfile({ user, setUser }) {
         {/* Profile Image (UNCHANGED) */}
         <div className="flex flex-col items-center mb-6">
           <div className="relative">
-            <img
-              src={
-                formData.profileImage ||
-                'https://cdn-icons-png.flaticon.com/512/149/149071.png'
-              }
-              alt="Profile"
-              className="w-32 h-32 rounded-full object-cover border-4 border-purple-300 shadow-lg"
+            <img src={
+            formData.profileImage
+                ? `http://127.0.0.1:3000/images/Uploads/${formData.profileImage}`
+                : "https://cdn-icons-png.flaticon.com/512/149/149071.png"
+                }
+            alt="Profile"
+            className="w-32 h-32 rounded-full object-cover border-4 border-purple-300 shadow-lg"
             />
 
             <label className="absolute bottom-2 right-2 bg-purple-600 p-2 rounded-full cursor-pointer hover:bg-purple-700">
@@ -82,8 +197,8 @@ export default function EditProfile({ user, setUser }) {
               </label>
               <input
                 type="text"
-                name="firstName"
-                value={formData.firstName}
+                name="fullName"
+                value={formData.fullName || ""}
                 onChange={handleChange}
                 className="w-full px-4 py-3 rounded-lg border border-purple-200 focus:ring-2 focus:ring-purple-500"
               />
@@ -96,7 +211,7 @@ export default function EditProfile({ user, setUser }) {
               <input
                 type="text"
                 name="lastName"
-                value={formData.lastName}
+                value={formData.lastName || ""}
                 onChange={handleChange}
                 className="w-full px-4 py-3 rounded-lg border border-purple-200 focus:ring-2 focus:ring-purple-500"
               />
@@ -111,7 +226,7 @@ export default function EditProfile({ user, setUser }) {
               <input
                 type="email"
                 name="email"
-                value={formData.email}
+                value={formData.email || ""}
                 onChange={handleChange}
                 className="w-full pl-10 pr-4 py-3 rounded-lg border border-purple-200 focus:ring-2 focus:ring-purple-500"
               />
@@ -126,7 +241,7 @@ export default function EditProfile({ user, setUser }) {
               <input
                 type="tel"
                 name="phone"
-                value={formData.phone}
+                value={formData.phone || ""}
                 onChange={handleChange}
                 className="w-full pl-10 pr-4 py-3 rounded-lg border border-purple-200 focus:ring-2 focus:ring-purple-500"
               />
@@ -141,7 +256,7 @@ export default function EditProfile({ user, setUser }) {
               <textarea
                 name="address"
                 rows="3"
-                value={formData.address}
+                value={formData.address || ""}
                 onChange={handleChange}
                 className="w-full pl-10 pr-4 py-3 rounded-lg border border-purple-200 focus:ring-2 focus:ring-purple-500"
               />
@@ -156,7 +271,7 @@ export default function EditProfile({ user, setUser }) {
               <input
                 type="text"
                 name="city"
-                value={formData.city}
+                value={formData.city || ""}
                 onChange={handleChange}
                 className="w-full pl-10 pr-4 py-3 rounded-lg border border-purple-200 focus:ring-2 focus:ring-purple-500"
               />
@@ -169,7 +284,7 @@ export default function EditProfile({ user, setUser }) {
             <input
               type="text"
               name="zip"
-              value={formData.zip}
+              value={formData.zip || ""}
               onChange={handleChange}
               className="w-full px-4 py-3 rounded-lg border border-purple-200 focus:ring-2 focus:ring-purple-500"
             />

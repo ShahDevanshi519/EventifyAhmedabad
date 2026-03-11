@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, ArrowLeft, Check } from 'lucide-react';
+import axios from 'axios';
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');
@@ -9,10 +10,17 @@ export default function ForgotPassword() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    setSubmitted(true);
-    setTimeout(() => {
-      navigate('/signin');
-    }, 3000);
+
+    axios.post("http://127.0.0.1:3000/forgotpassword",{email})
+    .then((res) => {
+      if(res.data.flag === 1){
+        alert(res.data.msg);
+        // navigate('/signin');
+      }else{
+        alert(res.data.msg);
+      }
+    }).catch((err) => console.log(err))
+
   };
 
   if (submitted) {

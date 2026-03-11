@@ -5,7 +5,7 @@ import OverviewTab from './OverviewTab';
 import EditProfile from './EditProfile';
 import YourBookings from './YourBookings';
 import ChangePassword from './ChangePassword';
-
+import axios from 'axios';
 export default function Dashboard() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -19,13 +19,53 @@ export default function Dashboard() {
     console.log('Dashboard mounted');
 
     const userName = localStorage.getItem("userName");
-    console.log("Dashboard userName:", userName);
+    const accessToken = localStorage.getItem("AccessToken");
 
-    // If no username → redirect
-    if (!userName) {
+    if(!accessToken){
       navigate('/signin');
       return;
     }
+
+    axios.get("http://127.0.0.1:3000/dashboard",{
+      headers:{
+        Authorization:`Bearer ${accessToken}`
+      }
+    }).then((res) => console.log(res.data))
+    .catch((err) => {
+      if(err.response?.status === 401){
+        const refreshToken = localStorage.getItem("RefreshToken");
+
+        if(!refreshToken){
+          alert("Your Session Is Expired,Please Do Logout and Login Again");
+          localStorage.clear();
+          navigate('/signin');
+          return;
+        }
+
+        axios.post("http://127.0.0.1:3000/refreshToken",{refreshToken})
+        .then((res) => {
+          const newAccessToken = res.data.access_token;
+
+          localStorage.setItem("AccessToken",newAccessToken);
+          return axios.get("http://127.0.0.1:3000/dashboard",{
+            headers:{
+              Authorization:`Bearer ${newAccessToken}`
+            }
+          });
+        }).then((res) => {console.log(res.data)})
+        .catch((err) => {
+          console.log(err);
+          alert("Your Session Is Expired,Please Do Logout and Login Again");
+          localStorage.clear();
+          navigate('/signin');
+        })
+      }
+    })
+  
+    // if (!userName) {
+    //   navigate('/signin');
+    //   return;
+    // }
 
     // Set user
     // eslint-disable-next-line react-hooks/set-state-in-effect

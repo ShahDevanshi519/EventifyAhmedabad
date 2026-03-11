@@ -13,6 +13,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import Dashboard from './pages/Dashboard';
 import Contact from './pages/Contact';
 import About from './pages/About';
+import ResetPassword from './pages/ResetPassword';
 
 export default function App() {
   return (
@@ -85,6 +86,16 @@ export default function App() {
             </MainLayout>
           }
         />
+
+          <Route
+          path="/resetpassword/:token"
+          element={
+            <MainLayout>
+              <ResetPassword />
+            </MainLayout>
+          }
+        />
+
         <Route
           path="/dashboard"
           element={

@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, Users, Calendar, Settings, ChevronDown,Contact } from "lucide-react";
+import { LayoutDashboard, Users, Calendar, Settings, ChevronDown, Contact } from "lucide-react";
 import { useState } from "react";
 
 export default function Sidebar() {
@@ -14,16 +14,29 @@ export default function Sidebar() {
     "px-4 py-2 rounded-lg transition-all duration-300 transform hover:scale-105 hover:shadow-lg";
 
   return (
-    <div className="w-72 bg-white shadow-2xl border-r border-gray-200 p-6 flex flex-col h-screen">
+    <div className="w-72 bg-white shadow-2xl border-r border-gray-200 p-6 flex flex-col h-screen overflow-y-auto">
 
-      {/* Logo */}
-      <h1 className="text-2xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent mb-10">
-        Eventifyahmedabad
-      </h1>
+      {/* --- BRANDED LOGO START --- */}
+      <div className="flex gap-3 items-center mb-10 group cursor-pointer">
+        {/* Animated Icon */}
+        <div className="relative w-10 h-10 bg-gradient-to-br from-purple-600 to-pink-500 rounded-xl flex items-center justify-center shadow-lg overflow-hidden shrink-0">
+          <span className="text-white font-black text-xl z-10">E</span>
+          {/* Automatic Shimmer Effect */}
+          <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full animate-auto-shimmer"></div>
+        </div>
+
+        {/* Branded Text */}
+        <div className="flex flex-col">
+          <span className="font-black text-2xl tracking-tight bg-gradient-to-r from-purple-600 via-pink-500 to-purple-600 bg-[length:200%_auto] animate-gradient-x bg-clip-text text-transparent">
+            Eventify
+          </span>
+          <div className="h-0.5 w-0 bg-gradient-to-r from-purple-500 to-pink-500 group-hover:w-full transition-all duration-500"></div>
+        </div>
+      </div>
+      {/* --- BRANDED LOGO END --- */}
 
       {/* Navigation */}
       <nav className="flex-1 flex flex-col gap-3">
-
         {/* Dashboard */}
         <NavLink
           to="/admin/dashboard"
@@ -79,11 +92,10 @@ export default function Sidebar() {
             />
           </button>
 
-          {/* Dropdown Menu */}
           <div
             className={`overflow-hidden transition-all duration-500 ${eventOpen ? "max-h-40 mt-2" : "max-h-0"}`}
           >
-            <div className="flex flex-col gap-2 ml-4 mt-2 bg-white rounded-2xl shadow-lg p-3">
+            <div className="flex flex-col gap-2 ml-4 mt-2 bg-white rounded-2xl shadow-lg p-3 border border-gray-100">
               <NavLink
                 to="/admin/events/add"
                 className={({ isActive }) =>
@@ -136,9 +148,31 @@ export default function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="mt-auto text-center text-gray-400 text-xs">
-        © {new Date().getFullYear()} Eventifyahmedabad
+      <div className="mt-auto text-center text-gray-400 text-xs pt-6">
+        © {new Date().getFullYear()} Eventify Ahmedabad
       </div>
+
+      {/* Animation Styles */}
+      <style>
+        {`
+          @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            50% { transform: translateX(100%); }
+            100% { transform: translateX(100%); }
+          }
+          .animate-auto-shimmer {
+            animation: shimmer 2s infinite;
+          }
+          @keyframes gradient-x {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+          }
+          .animate-gradient-x {
+            animation: gradient-x 3s linear infinite;
+          }
+        `}
+      </style>
     </div>
   );
 }

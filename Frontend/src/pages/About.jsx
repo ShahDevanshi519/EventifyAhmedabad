@@ -49,7 +49,7 @@ export default function About() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
         {/* Hero Section */}
         <div className="text-center mb-16">
-          <h1 className="text-5xl sm:text-6xl font-bold text-gray-800 mb-6">About EventifyAhmedabad</h1>
+          <h1 className="text-5xl sm:text-6xl font-bold text-gray-800 mb-6">About Eventify</h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
             Your ultimate destination for discovering and booking amazing events in Ahmedabad
           </p>
@@ -59,7 +59,7 @@ export default function About() {
         <div className="glass rounded-2xl p-8 sm:p-12 mb-12">
           <h2 className="text-3xl font-bold text-gray-800 mb-6">Our Story</h2>
           <p className="text-gray-600 text-lg leading-relaxed mb-4">
-            EventifyAhmedabad was founded with a simple mission: to bring people together through
+            Eventify was founded with a simple mission: to bring people together through
             amazing events. We believe that every moment of entertainment, learning, or celebration
             deserves to be special and easily accessible.
           </p>

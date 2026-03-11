@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Lock } from 'lucide-react';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 export default function ChangePassword() {
   const [formData, setFormData] = useState({
@@ -10,6 +12,7 @@ export default function ChangePassword() {
   const [showOldPassword, setShowOldPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     setFormData({
@@ -20,8 +23,62 @@ export default function ChangePassword() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    alert('Password changed successfully!');
-    setFormData({ oldPassword: '', newPassword: '', confirmPassword: '' });
+
+    if(formData.confirmPassword !== formData.newPassword){
+      alert("Password and confirm password must be matched");
+      return;
+    }
+
+    const accessToken = localStorage.getItem("AccessToken");
+
+    axios.post("http://127.0.0.1:3000/changepassword",{oldpassword:formData.oldPassword,newpassword:formData.newPassword},{
+      headers:{
+        Authorization:`Bearer ${accessToken}`
+      }
+    }).then((res) => {
+      if(res.data.flag === 1){
+        alert(res.data.msg);
+        navigate('/dashboard');
+      }else{
+        alert(res.data.msg);
+      }
+    }).catch((err) => {
+          if(err.response?.status === 401){
+            const refreshToken = localStorage.getItem("RefreshToken");
+    
+            if(!refreshToken){
+              alert("Your Session Is Expired,Please Do Logout and Login Again");
+              localStorage.clear();
+              navigate('/signin');
+              return;
+            }
+    
+            axios.post("http://127.0.0.1:3000/refreshToken",{refreshToken})
+            .then((res) => {
+              const newAccessToken = res.data.access_token;
+    
+              localStorage.setItem("AccessToken",newAccessToken);
+              return axios.post("http://127.0.0.1:3000/changepassword",{oldpassword:formData.oldPassword,newpassword:formData.newPassword},{
+                headers:{
+                  Authorization:`Bearer ${newAccessToken}`
+                }
+              });
+            }).then((res) => {
+              if(res.data.flag === 1){
+                alert(res.data.msg);
+                navigate('/dashboard');
+              }else{
+                alert(res.data.msg);
+              }
+            })
+            .catch((err) => {
+              console.log(err);
+              alert("Your Session Is Expired,Please Do Logout and Login Again")
+              localStorage.clear();
+              navigate('/signin');
+            })
+          }
+        })
   };
 
   return (

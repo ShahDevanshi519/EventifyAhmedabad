@@ -1,45 +1,39 @@
-import React from "react"
-import EventCard from "../events/EventCard"
+import React, { useState, useEffect } from "react";
 import axios from 'axios';
-import {useState,useEffect} from 'react';
+import EventCard from "../events/EventCard";
 
 export default function PopularEvents() {
 
-  
-  const [popularEvents,setPopularEvents] = useState([]);
+  const [popularEvents, setPopularEvents] = useState([]);
 
   useEffect(() => {
     axios.get("http://127.0.0.1:3000/display-popularEvents")
-    .then((res) => setPopularEvents(res.data))
-    .catch((err) => console.log(err))
-
-  },[])
+      .then((res) => setPopularEvents(res.data))
+      .catch((err) => console.log(err))
+  }, []);
 
   return (
-    <section className="py-14 w-full overflow-hidden relative">
+    <section className="py-14 w-full overflow-x-auto relative">
 
       {/* Background Glow */}
       <div className="absolute inset-0 bg-gradient-to-r from-purple-200/30 via-pink-200/30 to-purple-200/30 blur-3xl opacity-60"></div>
 
       {/* Glass Title */}
       <div className="relative flex items-center gap-3 mb-8 px-4 animate-slide-in-left">
-
         <span className="text-3xl animate-bounce">🎭</span>
-
         <h2 className="text-3xl font-extrabold bg-gradient-to-r from-purple-600 via-pink-500 to-purple-600 bg-clip-text text-transparent">
           Popular Events
         </h2>
       </div>
 
       {/* Cards Row */}
-      <div className="relative flex w-full px-2">
+      <div className="relative flex gap-4 px-4">
 
         {popularEvents.map((event, index) => (
-
           <div
             key={event._id}
             style={{ animationDelay: `${index * 150}ms` }}
-            className="w-1/4 px-3 animate-card-enter"
+            className="flex-shrink-0 animate-card-enter"
           >
 
             {/* Glass Border */}
@@ -53,7 +47,8 @@ export default function PopularEvents() {
 
                 <EventCard
                   event={event}
-                  onAddToWishlist={()=>{}}
+                  onAddToWishlist={() => {}}
+                  variant="small"
                 />
 
               </div>
@@ -61,11 +56,10 @@ export default function PopularEvents() {
             </div>
 
           </div>
-
         ))}
 
       </div>
 
     </section>
-  )
+  );
 }

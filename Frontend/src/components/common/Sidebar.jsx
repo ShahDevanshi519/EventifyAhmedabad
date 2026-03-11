@@ -15,9 +15,11 @@ export default function Sidebar() {
 
   const handleLogout = () => {
     console.log('Logging out...');
-    localStorage.removeItem('user');
+    localStorage.removeItem('userName');
     localStorage.removeItem('bookings');
     localStorage.removeItem('signupData');
+    localStorage.removeItem('AccessToken');
+    localStorage.removeItem('RefreshToken');
     navigate('/');
   };
 

@@ -3,6 +3,8 @@ const app = express();
 const cors = require('cors');
 const mongoose = require('mongoose');
 const fileupload = require('express-fileupload');
+const jwt = require('jsonwebtoken');
+const {v4:uuidv4} = require('uuid');
 const port = 3000;
 
 // Import Module
@@ -28,6 +30,7 @@ const EventTb = require('./models/EventSchema');
 const AdminTb = require('./models/MyAdminSchema');
 const ContactTb = require('./models/ContactSchema');
 const BookingTb = require('./models/BookingSchema');
+const verifyToken = require('./verifyToken');
 
 // Open Connection
 mongoose.connect("mongodb://127.0.0.1:27017/Eventifyamd")
@@ -78,11 +81,25 @@ app.get('/display-api',(req,res) => {
 app.post('/login-api',(req,res) => {
     const email = req.body.email;
     const password = req.body.password;
+    const ACCESS_SECRET_KEY = 'access_secret_key';
+    const REFRESH_SECRET_KEY = 'refresh_secret_key';
+
     UserTb.findOne({email:email})
     .then(data => {
         if(data){
             if(data.password == password){
-                res.json({flag:1,msg:'Login success',fullName:data.fullName,userId:data._id});
+                const access_token = jwt.sign({
+                    id:data._id,email:data.email},
+                    ACCESS_SECRET_KEY,
+                    { expiresIn:"1h" }
+                )
+
+                const refresh_token = jwt.sign({
+                    id:data._id,email:data.email},
+                    REFRESH_SECRET_KEY,
+                    { expiresIn:"7d"}
+                )
+                res.json({flag:1,msg:'Login success',fullName:data.fullName,userId:data._id,access_token,refresh_token});
             }else{
                 res.json({flag:0,msg:'Login faild'});
             }
@@ -91,6 +108,167 @@ app.post('/login-api',(req,res) => {
         }
     })
     .catch((err) => console.log(err))
+})
+
+// Dashboard API
+app.get('/dashboard',verifyToken,(req,res) => {
+    res.json({msg:"Welcome To Dashboard",user:req.user})
+})
+
+// Refresh Token
+app.post('/refreshToken',(req,res) => {
+    const refreshToken = req.body.refreshToken;
+    const ACCESS_SECRET_KEY = 'access_secret_key';
+    const REFRESH_SECRET_KEY = 'refresh_secret_key';
+
+    if(!refreshToken){
+        return res.status(401).json({msg:"Token Not Found"});
+    }
+
+    jwt.verify(refreshToken,REFRESH_SECRET_KEY,(err,user) => {
+        if(err){
+            return res.status(401).json({msg:"Token Is Invalid Now"});
+        }
+
+        const newToken = jwt.sign({
+            id:user.id,email:user.email},
+            ACCESS_SECRET_KEY,
+            { expiresIn:"1h"}   
+        )
+
+        res.json({access_token:newToken})
+    })
+})
+
+// ChangePassword
+app.post('/changepassword',verifyToken,(req,res) => {
+    const oldpassword = req.body.oldpassword;
+    const newpassword = req.body.newpassword;
+
+    UserTb.findById(req.user.id)
+    .then((user) => {
+        if(!user){
+            return res.status(401).json({msg:"User Not Found"})
+        }
+
+        if(user.password !== oldpassword){
+            return res.status(401).json({msg:"Password Not Matched"});
+        }
+
+        user.password = newpassword;
+
+        user.save()
+        .then(() => res.json({flag:1,msg:"Password Update Successfully"}))
+        .catch(() => res.json({flag:0,msg:"Password Not Updated"}))
+    }).catch((err) => console.log(err))
+})
+
+// Edit Profile Fetch Data
+app.get('/editprofile/fetchdata',verifyToken,(req,res) => {
+    UserTb.findById(req.user.id)
+    .then((data) => res.json(data))
+    .catch((err) => res.json(err))
+})
+
+// Edit Profile
+app.post('/editprofile',verifyToken,(req,res) => {
+    const {fullName,lastName,email,phone,address,city,zip} = req.body;
+    const updateData = {fullName,lastName,email,phone,address,city,zip};
+
+    if(req.files && req.files.profileImage){
+        const image = req.files.profileImage;
+        const imageName = image.name;
+        const uploadPath = "public/images/Uploads/" + imageName;
+        image.mv(uploadPath,(err) => {
+            if(err)
+                return res.status(500).json({msg:"Profile Image Is Not Uploaded"});
+        })
+
+        updateData.profileImage =  imageName;
+    }
+
+    UserTb.findByIdAndUpdate(req.user.id,updateData,{new:true})
+    .then(() => res.json({flag:1,msg:"Your Profile Updated Successfully"}))
+    .catch((err) => res.json({flag:0,msg:"Your Profile Not Updated Successfully",error:err}))
+})
+
+// ForgotPassword
+app.post('/forgotpassword',(req,res) => {
+    const email = req.body.email;
+
+    UserTb.findOne({email:email})
+    .then((user) => {
+        if(!user){
+            return res.json({flag:0,msg:"User Not Found,Please SignUp!"})
+        }
+
+        const token = uuidv4();
+
+        user.resetToken = token;
+        user.resetTokenExpire = Date.now() + 15 * 60 * 1000;
+
+        return user.save();
+    }).then((saveUser) => {
+        if(!saveUser){
+            return 
+        }
+
+        const nodemailer = require("nodemailer");
+        const transporter = nodemailer.createTransport({
+            host:"smtp.gmail.com",
+            port:587,
+            secure:false,
+            auth:{
+                user: "shahdevanshi003@gmail.com",
+                pass: "pmom kiwl noid lvbp"
+            }
+        });
+        
+        const resetLink = `http://localhost:5173/resetpassword/${saveUser.resetToken}`;
+
+        return transporter.sendMail({
+            from:`"Eventify" <shahdevanshi003@gmail.com>`,
+            to:saveUser.email,
+            subject:"Reset Password",
+            html:
+            `
+                <h2>Reset Token Link </h2>
+                <p>click the link below to reset your password.</p>
+                <a href="${resetLink}">Reset Password</a><br>
+                <p>this link will be expire in 15 minutes.</p>
+            `
+        });
+    }).then((info) => {
+        if(!info)
+            return;
+        console.log("Information Id",info);
+        res.json({flag:1,msg:"Email Send Successfully"})
+    }).catch((err) => {
+        console.log(err);
+        res.json({flag:0,msg:"Something Went Wrong",error:err})
+    })
+})
+
+// ResetPassword
+app.post('/resetpassword/:token',(req,res) => {
+    const newpassword = req.body.newPassword;
+    const token = req.params.token;
+
+    UserTb.findOne({
+        resetToken:token,
+        resetTokenExpire:{$gt:Date.now()}
+    }).then((user) => {
+        if(!user)
+            return res.json({msg:"Your Token Is Expired!Again Do ForgotPassword"})
+
+        user.password = newpassword;
+        user.resetToken = undefined;
+        user.resetTokenExpire = undefined;
+
+        user.save()
+        .then(() => res.json({flag:1,msg:"Your Password Reset Successfully"}))
+        .catch(() => res.json({flag:0,msg:"Your Password Not Reset..."}))
+    }).catch((err) => console.log(err))
 })
 
 // Event Page Render
@@ -169,7 +347,7 @@ app.get("/display-isLive",(req,res) => {
 
 // Display Popular Events
 app.get("/display-popularEvents",(req,res) => {
-    EventTb.find().limit(4)
+    EventTb.find().limit(5)
     .then((data) => res.json(data))
     .catch((err) => res.json(err))
 })
@@ -250,7 +428,7 @@ app.post('/contact-api', (req, res) => {
   ContactTb.create(req.body)
   .then(() => {
       transporter.sendMail({
-        from: '"EventifyAhmedabad" <shahdevanshi003@gmail.com>',
+        from: '"Eventify" <shahdevanshi003@gmail.com>',
         to: "nac1852sh@gmail.com",
         replyTo: email,
         subject: subject,
@@ -267,15 +445,15 @@ app.post('/contact-api', (req, res) => {
       .then(() => {
         return transporter.sendMail({
 
-        from: '"EventifyAhmedabad" <shahdevanshi003@gmail.com>',
+        from: '"Eventify" <shahdevanshi003@gmail.com>',
         to: email,
 
-        subject: "Thank You for Contacting Eventify Ahmedabad",
+        subject: "Thank You for Contacting Eventify",
 
         html: `
           <h2>Hello ${name},</h2>
 
-          <p>Thank you for contacting <strong>Eventify Ahmedabad</strong>.</p>
+          <p>Thank you for contacting <strong>Eventify</strong>.</p>
 
           <p>We have received your inquiry regarding "<strong>${subject}</strong>".</p>
 
@@ -284,7 +462,7 @@ app.post('/contact-api', (req, res) => {
           <br>
 
           <p>Best Regards,</p>
-          <p><strong>Eventify Ahmedabad Team</strong></p>
+          <p><strong>Eventify Team</strong></p>
         `
       });
       })
@@ -313,8 +491,6 @@ app.get('/contact-display',(req,res) => {
     .catch((err) => res.json({msg:"No Inquiry Found"}))
 })
 
-
-
 // Category Fetch
 app.get("/event/category/:category",(req,res) => {
     const category = req.params.category;
@@ -330,10 +506,21 @@ app.post('/booking',(req,res) => {
     .catch((err) => res.json({flag:0,msg:"Booking Is Not Done",error:err.message}))
 })
 
-// Booking Display
-app.get('/display-booking',(req,res) => {
-    BookingTb.find()
+app.get('/booking/display',(req,res) => {
+    const userId = req.query.userId;
+    UserTb.findById(userId)
     .then((data) => res.json(data))
+    .catch((err) => res.json(err))
+})
+
+// Booking Display
+app.get('/display-booking', (req, res) => {
+    BookingTb.find()
+    .populate("userId","fullName") 
+    .populate("eventId","title") 
+    .then((data) => {
+         console.log(data)
+        res.json(data)})
     .catch((err) => res.json(err))
 })
 

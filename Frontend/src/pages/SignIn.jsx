@@ -62,9 +62,11 @@ export default function SignIn() {
     
     axios.post("http://127.0.0.1:3000/login-api",{email,password})
     .then(res => {
-      if(res.data.flag == 1){
+      if(res.data.flag === 1){
         localStorage.setItem("userName",res.data.fullName);
         localStorage.setItem("userId",res.data.userId);
+        localStorage.setItem("AccessToken",res.data.access_token);
+        localStorage.setItem("RefreshToken",res.data.refresh_token);
         console.log("data",res.data);
         setLoginSuccess(true);
          setTimeout(() => {

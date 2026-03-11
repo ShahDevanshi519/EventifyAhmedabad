@@ -23,8 +23,8 @@ export default function ViewBooking() {
           <thead className="bg-purple-50 text-purple-700">
             <tr>
               <th className="p-4">ID</th>
-              <th className="p-4">UserId</th>
-              <th className="p-4">EventId</th>
+              <th className="p-4">User Name</th>
+              <th className="p-4">Even Name</th>
               <th className="p-4">Total Seats</th>
               <th className="p-4">Total Price</th>
               <th className="p-4">Booking Status</th>
@@ -37,8 +37,8 @@ export default function ViewBooking() {
             {booking.map((book,index) => (
               <tr key={book._id} className="border-t hover:bg-pink-50 transition">
                 <td className="p-4">{index + 1}</td>
-                <td className="p-4">{book.userId}</td>
-                <td className="p-4">{book.eventId}</td>
+                <td className="p-4">{book.userId?.fullName}</td>
+                <td className="p-4">{book.eventId?.title}</td>
                 <td className="p-4">{book.numberOfTickets}</td>
                 <td className="p-4">{book.totalAmount}</td>
                 <td className="p-4">{book.bookingStatus}</td>

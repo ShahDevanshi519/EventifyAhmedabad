@@ -57,6 +57,7 @@ export default function TrendingEvents() {
                 <EventCard
                   event={event}
                   onAddToWishlist={()=>{}}
+                  variant="small"
                 />
 
               </div>
