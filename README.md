@@ -15,7 +15,7 @@ Eventify is a full-stack event management platform where users can explore event
 - Event Booking
 - Rating & Feedback System
 
-### Admin Features
+### Admin Features (Admin Panel In React)
 - Admin Authentication
 - Create Events
 - Update Events
