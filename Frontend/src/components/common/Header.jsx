@@ -33,6 +33,7 @@ export default function Header() {
     localStorage.removeItem("userId")
     localStorage.removeItem("AccessToken");
     localStorage.removeItem("RefreshToken");
+    // localStorage.clear();
     setUserName(null)
     window.location.href = "/"
   }

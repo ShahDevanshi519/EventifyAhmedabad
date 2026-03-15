@@ -25,7 +25,7 @@ export default function Dashboard() {
       navigate('/signin');
       return;
     }
-
+    // Dashboard Api
     axios.get("http://127.0.0.1:3000/dashboard",{
       headers:{
         Authorization:`Bearer ${accessToken}`
@@ -60,6 +60,7 @@ export default function Dashboard() {
           navigate('/signin');
         })
       }
+
     })
   
     // if (!userName) {

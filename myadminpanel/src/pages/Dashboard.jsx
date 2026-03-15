@@ -1,10 +1,33 @@
 import { Users, Calendar, ClipboardList } from "lucide-react";
+import React,{useState,useEffect} from 'react';
+import axios from 'axios';
 
 export default function Dashboard() {
-  const stats = [
-    { title: "Total Users", value: 320, icon: Users, color: "from-purple-600 to-pink-500" },
-    { title: "Total Events", value: 48, icon: Calendar, color: "from-pink-500 to-purple-600" },
-    { title: "Total Bookings", value: 125, icon: ClipboardList, color: "from-purple-500 to-pink-500" },
+ 
+  const [usercount,setUsercount] = useState(0);
+  const [eventcount,setEventcount] = useState(0);
+  const [bookingcount,setBookingcount] = useState(0);
+  useEffect(() => { 
+    axios.get("http://127.0.0.1:3000/countuser")
+    .then((res) => {
+    setUsercount(res.data)
+    }).catch((err) => console.log(err))
+
+    axios.get("http://127.0.0.1:3000/countevent")
+    .then((res) => {
+      setEventcount(res.data)
+    }).catch((err) => console.log(err))
+
+    axios.get("http://127.0.0.1:3000/countbookingadmin")
+    .then((res) => {
+      setBookingcount(res.data)
+    }).catch((err) => console.log(err))
+},[])
+
+ const stats = [
+    { title: "Total Users", value: usercount, icon: Users, color: "from-purple-600 to-pink-500" },
+    { title: "Total Events", value: eventcount, icon: Calendar, color: "from-pink-500 to-purple-600" },
+    { title: "Total Bookings", value: bookingcount, icon: ClipboardList, color: "from-purple-500 to-pink-500" },
   ];
 
   return (

@@ -16,6 +16,7 @@ export default function AddEvent() {
   axios.post("http://localhost:3000/event-api", formData)
     .then(() => {
       alert("Event Added Successfully");
+      setEvent({});
     })
     .catch(() => {
       alert("Error Handling In Event");

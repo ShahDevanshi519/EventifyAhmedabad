@@ -1,9 +1,16 @@
 import { NavLink } from "react-router-dom";
 import { LayoutDashboard, Users, Calendar, Settings, ChevronDown, Contact } from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from 'react-router-dom';
 
 export default function Sidebar() {
   const [eventOpen, setEventOpen] = useState(false);
+  const [settingOpen,setSettingOpen] = useState(false);
+  const navigate = useNavigate();
+
+  const handelLogout = () => {
+    navigate('/login');
+  }
 
   // Base link style
   const linkStyle =
@@ -134,17 +141,53 @@ export default function Sidebar() {
         </NavLink>
 
         {/* Settings */}
-        <NavLink
-          to="/admin/settings/change-password"
-          className={({ isActive }) =>
-            `${linkStyle} ${
-              isActive ? "bg-purple-50 text-purple-700 shadow-lg scale-105" : "text-gray-600"
-            }`
-          }
-        >
-          <Settings size={20} />
-          Settings
-        </NavLink>
+        <div className="relative">
+          <button
+            onClick={() => setSettingOpen(!settingOpen)}
+            className={`${linkStyle} w-full justify-between text-gray-600`}
+          >
+            <div className="flex items-center gap-3">
+              <Settings size={20} />
+              Settings
+            </div>
+            <ChevronDown
+              size={16}
+              className={`transition-transform duration-300 ${settingOpen ? "rotate-180" : "rotate-0"}`}
+            />
+          </button>
+
+          <div
+            className={`overflow-hidden transition-all duration-500 ${settingOpen ? "max-h-40 mt-2" : "max-h-0"}`}
+          >
+            <div className="flex flex-col gap-2 ml-4 mt-2 bg-white rounded-2xl shadow-lg p-3 border border-gray-100">
+              <NavLink
+                to="/admin/settings/edit-profile"
+                className={({ isActive }) =>
+                  `${dropdownLinkStyle} ${
+                    isActive ? "bg-purple-50 text-purple-700 shadow-md font-semibold" : "hover:bg-purple-50 hover:text-purple-700"
+                  }`
+                }
+              >
+                Edit Profile
+              </NavLink>
+              <NavLink
+                to="/admin/settings/change-password"
+                className={({ isActive }) =>
+                  `${dropdownLinkStyle} ${
+                    isActive ? "bg-purple-50 text-purple-700 shadow-md font-semibold" : "hover:bg-purple-50 hover:text-purple-700"
+                  }`
+                }
+              >
+                Change Password
+              </NavLink>
+              <button onClick={handelLogout}
+                className={`${dropdownLinkStyle} text-left hover:bg-purple-50 hover:text-purple-700`}
+                >
+                Log Out
+              </button>
+            </div>
+          </div>
+        </div>
       </nav>
 
       {/* Footer */}

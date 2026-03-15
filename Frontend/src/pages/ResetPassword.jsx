@@ -7,7 +7,7 @@ export default function ResetPassword() {
   const [newPassword, setnewPassword] = useState('');
   const [confirmPassword, setconfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [error,setError] = useState({});
+  // const [error,setError] = useState({});
   
   const navigate = useNavigate();
   const {token} = useParams();

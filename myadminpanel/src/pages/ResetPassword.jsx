@@ -1,14 +1,15 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate,useParams } from "react-router-dom";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import axios from "axios";
 
-export default function Login() {
+export default function ResetPassword() {
   const navigate = useNavigate();
+  const {token} = useParams();
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
-    email: "",
-    password: "",
+    newpassword: "",
+    confirmpassword: "",
   });
 
   const handleChange = (e) => {
@@ -18,19 +19,23 @@ export default function Login() {
     });
   };
 
-  const handleLogin = (e) => {
+  const handleResetPassword = (e) => {
     e.preventDefault();
 
-    axios.post("http://127.0.0.1:3000/admin-login",formData)
+    if(formData.confirmpassword !== formData.newpassword){
+        alert("Password and Confirm Password Must Be Same!");
+        return;
+    }
+
+    axios.post(`http://127.0.0.1:3000/adminresetpassword/${token}`,formData)
     .then((res) => {
-      // alert(res.data.msg)
-      if(res.data.flag === 1){
-        localStorage.setItem("AdminId",res.data.adminId);
-        navigate('/admin/dashboard');
-      }
-    }).catch((err) => {
-      console.log(err)
-      alert("Login Failed")})
+        if(res.data.flag === 1){
+            alert("Password Updated Successfully!");
+            navigate('/login');
+        }else{
+            alert("Password Not Updated!");
+        }
+    }).catch((err) => console.log(err))
     
   };
 
@@ -45,33 +50,39 @@ export default function Login() {
           <h1 className="text-3xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent">
             Eventify
           </h1>
-          <p className="text-gray-500 text-sm mt-2">Admin Panel Login</p>
+          <p className="text-gray-500 text-sm mt-2">Reset Password</p>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleLogin} className="space-y-6">
+        <form onSubmit={handleResetPassword} className="space-y-6">
 
-          {/* Email */}
-          <div className="relative">
-            <Mail className="absolute left-3 top-3 text-purple-500" size={18} />
-            <input
-              type="email"
-              name="email"
-              placeholder="admin email"
-              value={formData.email}
-              onChange={handleChange}
-              className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-purple-400 transition shadow-sm"
-            />
-          </div>
-
-          {/* Password */}
+          {/* New Password */}
           <div className="relative">
             <Lock className="absolute left-3 top-3 text-purple-500" size={18} />
             <input
               type={showPassword ? "text" : "password"}
-              name="password"
-              placeholder="password"
-              value={formData.password}
+              name="newpassword"
+              placeholder="new password"
+              value={formData.newpassword}
+              onChange={handleChange}
+              className="w-full pl-10 pr-10 py-3 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-pink-400 transition shadow-sm"
+            />
+            <div
+              className="absolute right-3 top-3 cursor-pointer text-gray-500"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </div>
+          </div>      
+
+          {/* Confirm Password */}
+          <div className="relative">
+            <Lock className="absolute left-3 top-3 text-purple-500" size={18} />
+            <input
+              type={showPassword ? "text" : "password"}
+              name="confirmpassword"
+              placeholder="confirm password"
+              value={formData.confirmpassword}
               onChange={handleChange}
               className="w-full pl-10 pr-10 py-3 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-pink-400 transition shadow-sm"
             />
@@ -82,24 +93,13 @@ export default function Login() {
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </div>
           </div>
-
-          {/* Forgot Password */}
-          <div className="text-right">
-            <button
-                type="button"
-                onClick={() => navigate("/forgotpassword")}
-                className="text-sm text-purple-600 hover:text-pink-500 bg-white px-3 py-1 rounded-full shadow-sm transition"
-            >
-                Forgot Password?
-            </button>
-            </div>
-
+        
           {/* Login Button */}
           <button
             type="submit"
             className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-500 text-white font-semibold shadow-lg hover:scale-105 hover:shadow-pink-300 transition-all duration-300"
           >
-            Login
+            Reset Password
           </button>
         </form>
 

@@ -11,6 +11,12 @@ export default function ViewUsers() {
     .catch(err => console.log(err))
   },[])
 
+  const updateStatus = (id,status) => {
+    axios.put(`http://127.0.0.1:3000/admin/contact/status/${id}`,{status})
+    .then((res) => alert(res.data.msg))
+    .catch((err) => console.log(err))
+  }
+
   return (
     <div>
       <h2 className="text-3xl font-extrabold mb-8 text-gray-800 flex items-center gap-3">
@@ -27,7 +33,8 @@ export default function ViewUsers() {
               <th className="p-4">Email</th>
               <th className="p-4">Subject</th>
               <th className="p-4">Message</th>
-              <th className="p-4">Action</th>
+              <th className="p-4">Status</th>
+              {/* <th className="p-4">Action</th> */}
             </tr>
           </thead>
 
@@ -39,13 +46,23 @@ export default function ViewUsers() {
                 <td className="p-4">{con.email}</td>
                 <td className="p-4">{con.subject}</td>
                 <td className="p-4">{con.message}</td>
+                <td className="p-4">
+                <select 
+                  value={con.status} 
+                  onChange={(e) => updateStatus(con._id, e.target.value)}
+                  className="bg-white border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block w-full p-2.5 shadow-sm outline-none cursor-pointer hover:border-purple-300 transition-all"
+                >
+                  <option value="pending">Pending</option>
+                  <option value="confirm">Confirm</option>
+                  </select>
+                </td>
                 <td className="p-4 flex gap-2">
                 {/* <button className="p-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition">
                   <Edit size={16} />
                   </button> */}
-                <button className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition">
+                {/* <button className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition">
                   <Trash2 size={16} />
-                  </button>
+                  </button> */}
                 </td>
               </tr>
             ))}

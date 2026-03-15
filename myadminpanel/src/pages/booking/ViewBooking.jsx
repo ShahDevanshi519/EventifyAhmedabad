@@ -24,7 +24,7 @@ export default function ViewBooking() {
             <tr>
               <th className="p-4">ID</th>
               <th className="p-4">User Name</th>
-              <th className="p-4">Even Name</th>
+              <th className="p-4">Event Name</th>
               <th className="p-4">Total Seats</th>
               <th className="p-4">Total Price</th>
               <th className="p-4">Booking Status</th>

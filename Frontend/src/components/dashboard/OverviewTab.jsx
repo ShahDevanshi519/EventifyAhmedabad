@@ -1,8 +1,78 @@
-import React from 'react';
+import React,{useEffect,useState} from 'react';
+import {useNavigate} from 'react-router-dom';
 import { Ticket, Calendar } from 'lucide-react';
+import axios from 'axios';
 
 export default function OverviewTab({ user, bookings }) {
   console.log('OverviewTab received - user:', user, 'bookings:', bookings);
+
+  const [count,setCount] = useState(0);
+  const [recent,setRecent] = useState([]);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+
+  const token = localStorage.getItem("AccessToken");
+
+  if(!token){
+    navigate('/signin');
+    return;
+  }
+
+  axios.get("http://127.0.0.1:3000/countbooking",{
+    headers:{
+      Authorization:`Bearer ${token}`
+    }
+  }).then((res) => {
+    setCount(res.data)
+    console.log(res.data)
+  })
+  axios.get("http://127.0.0.1:3000/recentuserbooking",{
+    headers:{
+      Authorization:`Bearer ${token}`
+    }
+  }).then((res) => {
+    setRecent(res.data)
+    console.log(res.data)
+  })
+  .catch((err) => {
+      if(err.response?.status === 401){
+        const refreshToken = localStorage.getItem("RefreshToken");
+
+        if(!refreshToken){
+          alert("Your Session Is Expired,Please Do Logout and Login Again");
+          localStorage.clear();
+          navigate('/signin');
+          return;
+        }
+
+        axios.post("http://127.0.0.1:3000/refreshToken",{refreshToken})
+        .then((res) => {
+          const newAccessToken = res.data.access_token;
+
+          localStorage.setItem("AccessToken",newAccessToken);
+          return axios.get("http://127.0.0.1:3000/countbooking",{
+            headers:{
+              Authorization:`Bearer ${newAccessToken}`
+            }
+          });
+        }).then((res) => {
+          setCount(res.data)
+          console.log(res.data)
+        }).then((res) => {
+          setRecent(res.data)
+          console.log(res.data)
+        })
+        .catch((err) => {
+          console.log(err);
+          alert("Your Session Is Expired,Please Do Logout and Login Again");
+          localStorage.clear();
+          navigate('/signin');
+        })
+      }
+    })
+
+  },[])
 
   return (
     <div className="space-y-8">
@@ -20,7 +90,7 @@ export default function OverviewTab({ user, bookings }) {
             <h3 className="text-gray-700 font-bold">Total Bookings</h3>
             <Ticket className="text-purple-500" size={24} />
           </div>
-          <p className="text-4xl font-bold text-purple-600">{bookings?.length || 0}</p>
+          <p className="text-4xl font-bold text-purple-600">{count}</p>
           <p className="text-sm text-gray-500 mt-2">events booked</p>
         </div>
 
@@ -52,19 +122,19 @@ export default function OverviewTab({ user, bookings }) {
       {/* Recent Bookings */}
       <div className="space-y-4">
         <h3 className="text-2xl font-bold text-gray-800">Recent Bookings</h3>
-        {bookings && bookings.length > 0 ? (
+        {recent && recent.length > 0 ? (
           <div className="space-y-3">
-            {bookings.slice(-3).reverse().map((booking) => (
-              <div key={booking.id} className="glass rounded-lg p-4 hover:shadow-lg transition-all">
+            {recent.slice(-3).reverse().map((booking) => (
+              <div key={booking._id} className="glass rounded-lg p-4 hover:shadow-lg transition-all">
                 <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-bold text-gray-800">{booking.eventTitle}</h4>
+                  <h4 className="font-bold text-gray-800">{booking.eventId?.title}</h4>
                   <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-lg text-sm font-bold">
-                    {booking.id}
+                    {booking.bookingStatus}
                   </span>
                 </div>
                 <div className="grid grid-cols-3 gap-4 text-sm text-gray-600">
-                  <div>📅 {new Date(booking.date).toLocaleDateString('en-IN')}</div>
-                  <div>🎫 {booking.seats} seat(s)</div>
+                  <div>📅 {new Date(booking.bookingDate).toLocaleDateString('en-IN')}</div>
+                  <div>🎫 {booking.numberOfTickets} Ticekts </div>
                   <div className="text-right">₹{booking.totalAmount}</div>
                 </div>
               </div>

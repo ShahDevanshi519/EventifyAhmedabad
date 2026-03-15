@@ -1,62 +1,158 @@
 import React, { useState } from 'react';
-import { CreditCard } from 'lucide-react';
+import { CreditCard, User, Mail, Phone, Calendar, Ticket, CheckCircle2 } from 'lucide-react';
+import axios from 'axios';
+import {useNavigate} from 'react-router-dom';
 
-export default function BookingStep2({ event, seatCount, totalAmount, onNext }) {
+export default function BookingStep2({ event, bookingData, totalAmount, onNext, onBack }) {
   const [paymentMethod, setPaymentMethod] = useState('card');
-  const [cardData, setCardData] = useState({ cardNumber: '', expiryDate: '', cvv: '', cardName: '' });
+  const [loading, setLoading] = useState(false);
+  const {navigate} = useNavigate();
 
-  const handleCardChange = (e) => {
-    const { name, value } = e.target;
-    setCardData({ ...cardData, [name]: value });
+  const handleFinalSubmit = (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    // const userId = localStorage.getItem("userId");
+    const token = localStorage.getItem("AccessToken");
+
+    const finalPayload = {
+      eventId: event._id,
+      numberOfTickets: bookingData.seatCount,
+      totalAmount: totalAmount,
+      userDetails: bookingData.userDetails 
+    };
+
+    axios.post("http://127.0.0.1:3000/booking", finalPayload,{
+      headers:{
+        Authorization:`Bearer ${token}`
+      }
+    })
+    .then((res) => {
+        if (res.data.flag === 1) {
+          onNext({ paymentDetails: { method: paymentMethod } });
+        } else {
+          alert("Booking failed: " + (res.data.message || "Unknown error"));
+        }
+      })
+      .catch((err) => {
+                if(err.response?.status === 401){
+                  const refreshToken = localStorage.getItem("RefreshToken");
+          
+                  if(!refreshToken){
+                    alert("Your Session Is Expired,Please Do Logout and Login Again");
+                    localStorage.clear();
+                    navigate('/signin');
+                    return;
+                  }
+          
+                  axios.post("http://127.0.0.1:3000/refreshToken",{refreshToken})
+                  .then((res) => {
+                    const newAccessToken = res.data.access_token;
+          
+                    localStorage.setItem("AccessToken",newAccessToken);
+                    return axios.post("http://127.0.0.1:3000/booking",finalPayload,{
+                      headers:{
+                        Authorization:`Bearer ${newAccessToken}`
+                      }
+                    });
+                  }).then((res) => {
+                    if(res.data.flag === 1){
+                      onNext({ paymentDetails: { method: paymentMethod } });
+                    }else{
+                      alert(res.data.msg);
+                    }
+                  })
+                  .catch((err) => {
+                    console.log(err);
+                    alert("Your Session Is Expired,Please Do Logout and Login Again")
+                    localStorage.clear();
+                    navigate('/signin');
+                  })
+                }
+              })
+      .finally(() => {
+        setLoading(false);
+      });
   };
 
-  const handleSubmit = (e) => { e.preventDefault(); onNext({ paymentDetails: { method: paymentMethod, ...cardData } }); };
-
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 bg-white">
-      <h3 className="text-xl font-bold text-gray-800">Payment Method</h3>
-
-      <div className="space-y-3">
-        {[
-          { value: 'card', label: 'Credit/Debit Card', icon: '💳' },
-          { value: 'upi', label: 'UPI', icon: '📱' },
-          { value: 'netbanking', label: 'Net Banking', icon: '🏦' },
-          { value: 'wallet', label: 'Wallet', icon: '👛' },
-        ].map((method) => (
-          <label key={method.value} className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
-            paymentMethod === method.value ? 'border-purple-500 bg-purple-50' : 'border-gray-300 hover:border-purple-300'
-          }`}>
-            <input type="radio" name="paymentMethod" value={method.value} checked={paymentMethod === method.value} onChange={(e) => setPaymentMethod(e.target.value)} className="w-5 h-5"/>
-            <span className="text-xl">{method.icon}</span>
-            <span className="font-medium text-gray-800">{method.label}</span>
-          </label>
-        ))}
-      </div>
-
-      {paymentMethod === 'card' && (
-        <div className="space-y-4">
-          <h3 className="text-lg font-bold text-gray-800">Card Details</h3>
-          <div className="relative">
-            <CreditCard className="absolute left-3 top-3 text-purple-500" size={20}/>
-            <input type="text" name="cardNumber" value={cardData.cardNumber} onChange={handleCardChange} placeholder="1234 5678 9012 3456" className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-purple-500 focus:outline-none transition"/>
+    <form onSubmit={handleFinalSubmit} className="space-y-6">
+      <div className="bg-gray-50 border border-gray-200 rounded-2xl p-5 space-y-4">
+        <div className="flex justify-between items-start border-b pb-3">
+          <div>
+            <h4 className="font-bold text-purple-700 text-lg">{event.title}</h4>
+            <p className="text-xs text-gray-500 flex items-center gap-1 mt-1">
+              <Calendar size={12}/> {new Date(event.date).toLocaleDateString()}
+            </p>
           </div>
-          <input type="text" name="cardName" value={cardData.cardName} onChange={handleCardChange} placeholder="Cardholder Name" className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-purple-500 focus:outline-none transition"/>
-          <div className="grid grid-cols-2 gap-4">
-            <input type="text" name="expiryDate" value={cardData.expiryDate} onChange={handleCardChange} placeholder="MM/YY" className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-purple-500 focus:outline-none transition"/>
-            <input type="text" name="cvv" value={cardData.cvv} onChange={handleCardChange} placeholder="CVV" className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-purple-500 focus:outline-none transition"/>
+          <div className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
+            <Ticket size={12}/> {bookingData.seatCount} Seats
           </div>
         </div>
-      )}
 
-      <div className="bg-purple-50 p-4 rounded-lg space-y-2 font-semibold text-gray-800">
-        <div className="flex justify-between"><span>Subtotal</span><span>₹{event.price * seatCount}</span></div>
-        <div className="flex justify-between"><span>Convenience Fee</span><span>₹{Math.floor(event.price * seatCount * 0.1)}</span></div>
-        <div className="flex justify-between border-t border-gray-300 pt-2 text-lg font-bold"><span>Total Amount</span><span className="text-purple-600">₹{totalAmount}</span></div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+          <div className="flex items-center gap-2 text-gray-600 truncate">
+            <User size={14}/> {bookingData.userDetails.fullName}
+          </div>
+          <div className="flex items-center gap-2 text-gray-600">
+            <Mail size={14}/> {bookingData.userDetails.email}
+          </div>
+          <div className="flex items-center gap-2 text-gray-600">
+            <Phone size={14}/> {bookingData.userDetails.phone}
+          </div>
+          <div className="flex items-center gap-2 text-gray-600 font-bold">
+            Price: ₹{event.price} / ticket
+          </div>
+        </div>
       </div>
 
-      <button type="submit" className="w-full py-3 rounded-lg font-bold text-white bg-gradient-to-r from-purple-500 to-pink-500">
-        Proceed to Confirmation
-      </button>
+      {/* PAYMENT SECTION */}
+      <div className="space-y-3">
+        <h3 className="font-bold text-gray-800">Payment Method</h3>
+        <div className="grid grid-cols-2 gap-3">
+          {['card', 'upi'].map((m) => (
+            <button 
+              key={m} 
+              type="button" 
+              onClick={() => setPaymentMethod(m)}
+              className={`p-3 rounded-xl border-2 transition-all flex items-center gap-2 font-semibold capitalize
+              ${paymentMethod === m ? 'border-purple-600 bg-purple-50 text-purple-700' : 'border-gray-100'}`}
+            >
+              <CheckCircle2 size={16} className={paymentMethod === m ? 'block' : 'hidden'}/> {m}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* TOTAL AMOUNT BOX */}
+      <div className="bg-purple-600 text-white p-5 rounded-2xl shadow-lg">
+        <div className="flex justify-between text-sm opacity-80 mb-2 font-medium">
+          <span>Subtotal ({bookingData.seatCount} tickets)</span>
+          <span>₹{event.price * bookingData.seatCount}</span>
+        </div>
+        <div className="flex justify-between items-center border-t border-white/20 pt-2">
+          <span className="font-bold">Total Amount (inc. fees)</span>
+          <span className="text-2xl font-black">₹{totalAmount}</span>
+        </div>
+      </div>
+
+      {/* ACTIONS */}
+      <div className="flex gap-3">
+        <button 
+          type="button" 
+          onClick={onBack} 
+          className="flex-1 py-4 border-2 border-gray-200 rounded-2xl font-bold text-gray-500 hover:bg-gray-50 transition"
+        >
+          Back
+        </button>
+        <button 
+          type="submit" 
+          disabled={loading} 
+          className="flex-[2] py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-2xl font-bold shadow-lg disabled:opacity-70"
+        >
+          {loading ? "Processing..." : `Pay ₹${totalAmount}`}
+        </button>
+      </div>
     </form>
   );
 }

@@ -1,3 +1,4 @@
+require("dotenv").config();
 const express = require('express');
 const app = express();
 const cors = require('cors');
@@ -5,7 +6,7 @@ const mongoose = require('mongoose');
 const fileupload = require('express-fileupload');
 const jwt = require('jsonwebtoken');
 const {v4:uuidv4} = require('uuid');
-const port = 3000;
+const port = process.env.PORT;
 
 // Import Module
 // Middleware
@@ -32,8 +33,10 @@ const ContactTb = require('./models/ContactSchema');
 const BookingTb = require('./models/BookingSchema');
 const verifyToken = require('./verifyToken');
 
+const MONGO_URL = process.env.MONGO_URL
+
 // Open Connection
-mongoose.connect("mongodb://127.0.0.1:27017/Eventifyamd")
+mongoose.connect(MONGO_URL)
 .then(() => console.log("connection open"))
 .catch(() => console.log("connection failed"))
 // connection close
@@ -53,7 +56,7 @@ app.post('/admin-login',(req,res) => {
     .then((data) => {
         if(data){
             if(data.password == password){
-                res.json({flag:1,msg:"Login Successfully"})
+                res.json({flag:1,msg:"Login Successfully",adminId:data._id})
             }else{
                 res.json({flag:0,msg:"Login Failed"})
             }
@@ -81,8 +84,8 @@ app.get('/display-api',(req,res) => {
 app.post('/login-api',(req,res) => {
     const email = req.body.email;
     const password = req.body.password;
-    const ACCESS_SECRET_KEY = 'access_secret_key';
-    const REFRESH_SECRET_KEY = 'refresh_secret_key';
+    const ACCESS_SECRET_KEY = process.env.JWT_SECRET;
+    const REFRESH_SECRET_KEY = process.env.JWT_REFRESH_SECRET;
 
     UserTb.findOne({email:email})
     .then(data => {
@@ -118,8 +121,8 @@ app.get('/dashboard',verifyToken,(req,res) => {
 // Refresh Token
 app.post('/refreshToken',(req,res) => {
     const refreshToken = req.body.refreshToken;
-    const ACCESS_SECRET_KEY = 'access_secret_key';
-    const REFRESH_SECRET_KEY = 'refresh_secret_key';
+    const ACCESS_SECRET_KEY = process.env.JWT_SECRET;
+    const REFRESH_SECRET_KEY = process.env.JWT_REFRESH_SECRET;
 
     if(!refreshToken){
         return res.status(401).json({msg:"Token Not Found"});
@@ -219,15 +222,15 @@ app.post('/forgotpassword',(req,res) => {
             port:587,
             secure:false,
             auth:{
-                user: "shahdevanshi003@gmail.com",
-                pass: "pmom kiwl noid lvbp"
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS
             }
         });
-        
-        const resetLink = `http://localhost:5173/resetpassword/${saveUser.resetToken}`;
+        const frontend = process.env.FRONTEND_URL
+        const resetLink = `${frontend}/resetpassword/${saveUser.resetToken}`;
 
         return transporter.sendMail({
-            from:`"Eventify" <shahdevanshi003@gmail.com>`,
+            from:`"Eventify" <${process.env.EMAIL_USER}>`,
             to:saveUser.email,
             subject:"Reset Password",
             html:
@@ -420,15 +423,15 @@ app.post('/contact-api', (req, res) => {
     port: 587,
     secure: false,
     auth: {
-      user: "shahdevanshi003@gmail.com",
-      pass: "pmom kiwl noid lvbp",
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
     },
   });
 
   ContactTb.create(req.body)
   .then(() => {
       transporter.sendMail({
-        from: '"Eventify" <shahdevanshi003@gmail.com>',
+        from: `"Eventify" <${process.env.EMAIL_USER}>`,
         to: "nac1852sh@gmail.com",
         replyTo: email,
         subject: subject,
@@ -445,7 +448,7 @@ app.post('/contact-api', (req, res) => {
       .then(() => {
         return transporter.sendMail({
 
-        from: '"Eventify" <shahdevanshi003@gmail.com>',
+        from: `"Eventify" <${process.env.EMAIL_USER}>`,
         to: email,
 
         subject: "Thank You for Contacting Eventify",
@@ -500,20 +503,27 @@ app.get("/event/category/:category",(req,res) => {
 })
 
 // Booking API
-app.post('/booking',(req,res) => {
-    BookingTb.create(req.body)
+app.post('/booking',verifyToken,(req,res) => {
+    
+    const bookingData = {
+        userId:req.user.id,
+        eventId : req.body.eventId,
+        numberOfTickets : req.body.numberOfTickets,
+        totalAmount : req.body.totalAmount
+    }
+
+    BookingTb.create(bookingData)
     .then((data) => res.json({flag:1,msg:"Booking Done Successfully",booking:data}))
     .catch((err) => res.json({flag:0,msg:"Booking Is Not Done",error:err.message}))
 })
 
-app.get('/booking/display',(req,res) => {
-    const userId = req.query.userId;
-    UserTb.findById(userId)
+app.get('/booking/display',verifyToken,(req,res) => {
+    UserTb.findById(req.user.id)
     .then((data) => res.json(data))
     .catch((err) => res.json(err))
 })
 
-// Booking Display
+// Admin Booking Display
 app.get('/display-booking', (req, res) => {
     BookingTb.find()
     .populate("userId","fullName") 
@@ -522,6 +532,225 @@ app.get('/display-booking', (req, res) => {
          console.log(data)
         res.json(data)})
     .catch((err) => res.json(err))
+})
+
+// Particular User Booking Display
+app.get('/pariticularbooking',verifyToken,(req,res) => {
+    BookingTb.find({userId:req.user.id})
+    .populate("eventId","title")
+    .then((data) => {
+        res.json(data)
+    })
+    .catch((err) => res.json(err))
+})
+
+// Count Particular User Booking Data
+app.get('/countbooking',verifyToken,(req,res) => {
+    BookingTb.countDocuments({userId:req.user.id})
+    .then((count) => res.json(count))
+    .catch((err) => res.json(err))
+})
+
+// Recent Booking
+app.get('/recentuserbooking',verifyToken,(req,res) => {
+    BookingTb.find({userId:req.user.id})
+    .populate("eventId","title")
+    .sort({bookingDate:-1})
+    .limit(3)
+    .then((data) => res.json(data))
+    .catch((err) => res.json(err))
+})
+
+// Admin Dashboard Count Total User,Events,Bookings
+app.get('/countuser',(req,res) => {
+    UserTb.countDocuments()
+    .then((data) => res.json(data))
+    .catch((err) => res.json(err))
+})
+
+app.get('/countevent',(req,res) => {
+    EventTb.countDocuments()
+    .then((data) => res.json(data))
+    .catch((err) => res.json(err))
+})
+
+app.get('/countbookingadmin',(req,res) => {
+    BookingTb.countDocuments()
+    .then((data) => res.json(data))
+    .catch((err) => res.json(err))
+})
+
+// Admin Delete The User
+app.delete('/admin/deleteuser/:id',(req,res) => {
+    UserTb.findByIdAndDelete(req.params.id)
+    .then(() => res.json({flag:1,msg:"User Deleted Successfully!"}))
+    .catch(() => res.json({flag:0,msg:"User Not Deleted Successfully"}))
+})
+
+// Admin Delete The Event
+app.delete('/admin/deleteEvent/:id',(req,res) => {
+    EventTb.findByIdAndDelete(req.params.id)
+    .then(() => res.json({flag:1,msg:"Event Deleted Successfully!"}))
+    .catch(() => res.json({flag:0,msg:"Event Not Deleted Successfully"}))
+})
+
+// Contact Status Update
+app.put('/admin/contact/status/:id',(req,res) => {
+    const newstatus = req.body.status;
+
+    ContactTb.findByIdAndUpdate(req.params.id,{
+        status:newstatus
+    }).then(() => res.json({flag:1,msg:"Status Updated Successfully"}))
+    .catch((err) => console.log(err))
+})
+
+// Admin ChangePassword
+app.post('/admin/changepassword/:id',(req,res) => {
+    const oldpassword = req.body.oldpassword;
+    const newpassword = req.body.newpassword;
+
+    AdminTb.findById(req.params.id)
+    .then((user) => {
+        if(!user){
+            return res.json({msg:"User Not Found"})
+        }
+
+        if(user.password !== oldpassword){
+            return res.json({msg:"passsword doesn't match! enter valid password."})
+        }
+
+        user.password = newpassword;
+        user.save()
+        .then(() => res.json({flag:1,msg:"password updated successfully!"}))
+        .catch(() => res.json({flag:0,msg:"password not updated successfully"}))
+    }).catch((err) => console.log(err))
+})
+
+// Admin Edit Profile
+app.get("/admin/display/:id",(req,res) => {
+    AdminTb.findById(req.params.id)
+    .then((data) => res.json(data))
+    .catch((err) => res.json(err))
+})
+
+app.post('/admin/editprofile/:id',(req,res) => {
+
+    const {adminName,lastName,email,mobile,address,city,zip} = req.body;
+
+    const allData = {adminName,lastName,email,mobile,address,city,zip};
+
+    if(req.files && req.files.profileImage){
+
+        const image = req.files.profileImage;
+        const imagename = image.name;
+        const uploadpath = 'public/Images/Admin/' + imagename;
+
+        image.mv(uploadpath,(err)=>{
+            if(err){
+                return res.json({flag:0,msg:"File Is Not Uploaded Successfully"})
+            }
+
+            allData.profileImage = imagename;
+
+            AdminTb.findByIdAndUpdate(req.params.id,allData,{returnDocument:"after"})
+            .then(()=>res.json({flag:1,msg:"Your Profile Updated Successfully!"}))
+            .catch(()=>res.json({flag:0,msg:"Your Profile Is Not Updated Successfully!"}))
+
+        })
+
+    }else{
+
+        AdminTb.findByIdAndUpdate(req.params.id,allData,{returnDocument:"after"})
+        .then(()=>res.json({flag:1,msg:"Your Profile Updated Successfully!"}))
+        .catch(()=>res.json({flag:0,msg:"Your Profile Is Not Updated Successfully!"}))
+
+    }
+
+})
+
+// Forgot Password
+app.post('/admin/forgotpassword',(req,res) => {
+
+    const email = req.body.email;
+
+    AdminTb.findOne({email:email})
+    .then((user) => {
+
+        if(!user){
+            return res.json({msg:"User Not Exist"});
+        }
+
+        const token = uuidv4();
+        user.resetToken = token;
+        user.resetTokenExpire = Date.now() + 15 * 60 * 1000;
+
+        return user.save();
+
+    }).then((saveUser) => {
+
+        if(!saveUser){
+            return res.json({msg:"User save failed"});
+        }
+
+        const nodemailer = require("nodemailer");
+
+        const transporter = nodemailer.createTransport({
+            host:'smtp.gmail.com',
+            port:587,
+            secure:false,
+            auth:{
+                user:process.env.EMAIL_USER,
+                pass:process.env.EMAIL_PASS
+            }
+        });
+
+        const frontend = process.env.FRONTEND_URL;
+        const resetLink = `${frontend}/adminresetpassword/${saveUser.resetToken}`;
+
+        return transporter.sendMail({
+            from:`"eventify" <${process.env.EMAIL_USER}>`,
+            to: saveUser.email,
+            subject:"Reset Password Link",
+            html:`
+                <h2>Reset Token Link</h2>
+                <p>Click the link below to reset password</p>
+                <a href="${resetLink}">Reset Password</a>
+                <p>this link will be expired in 15 minutes.</p>
+            `
+        });
+
+    }).then(() => {
+
+        res.json({flag:1,msg:"Email Send Successfully"});
+
+    }).catch((err) => {
+
+        console.log(err);
+        res.json({flag:0,msg:"Something Went Wrong!"});
+
+    });
+
+});
+
+app.post('/adminresetpassword/:token',(req,res) => {
+    const newpassword = req.body.newpassword;
+    const token = req.params.token;
+
+    AdminTb.findOne({
+        resetToken:token,
+        resetTokenExpire:{$gt:Date.now()}
+    }).then((user) => {
+        if(!user)
+            return res.json({msg:"Your Token Is Expired!Again Do ForgotPassword"})
+
+        user.password = newpassword;
+        user.resetToken = undefined;
+        user.resetTokenExpire = undefined;
+
+        user.save()
+        .then(() => res.json({flag:1,msg:"Your Password Reset Successfully"}))
+        .catch(() => res.json({flag:0,msg:"Your Password Not Reset..."}))
+    }).catch((err) => console.log(err))
 })
 
 app.get('/',(req,res) => {

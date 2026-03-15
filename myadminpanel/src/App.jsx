@@ -8,12 +8,18 @@ import AddEvent from "./pages/events/AddEvent";
 import ViewEvents from "./pages/events/ViewEvents";
 import ChangePassword from "./pages/settings/ChangePassword";
 import ViewBooking from "./pages/booking/ViewBooking";
+import ForgotPassword from "./pages/ForgotPassword";
+import EditProfile from "./pages/settings/EditProfile";
+import ResetPassword from "./pages/ResetPassword";
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Login />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/forgotpassword" element={<ForgotPassword />} />
+        <Route path="/adminresetpassword/:token" element={<ResetPassword/>}/>
 
         <Route path="/admin" element={<AdminLayout />}>
           <Route path="dashboard" element={<Dashboard />} />
@@ -23,6 +29,7 @@ function App() {
           <Route path="events/view" element={<ViewEvents />} />
           <Route path="booking" element={<ViewBooking />}/>
           <Route path="settings/change-password" element={<ChangePassword />} />
+          <Route path="settings/edit-profile" element={<EditProfile />} />
         </Route>
       </Routes>
     </BrowserRouter>

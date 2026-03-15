@@ -3,7 +3,7 @@ import { Mail, Phone, MapPin, Building, Camera } from 'lucide-react';
 import axios from 'axios';
 import {useNavigate} from 'react-router-dom';
 
-export default function EditProfile({ user, setUser }) {
+export default function EditProfile({ user }) {
 
   const [formData, setFormData] = useState({
     fullName: user.fullName || '',

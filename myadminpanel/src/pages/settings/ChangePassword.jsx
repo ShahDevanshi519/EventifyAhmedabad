@@ -1,11 +1,14 @@
 import { useState } from "react";
 import { Lock, Eye, EyeOff, KeyRound } from "lucide-react";
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 export default function ChangePassword() {
 
   const [showOld, setShowOld] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const navigate = useNavigate();
 
   const [passwordData, setPasswordData] = useState({
     oldPassword: "",
@@ -23,18 +26,29 @@ export default function ChangePassword() {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    if (!passwordData.oldPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
-      alert("Please fill all fields");
-      return;
-    }
+   const id = localStorage.getItem("AdminId");
 
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      alert("New password and confirm password do not match");
-      return;
-    }
+   if(!id){
+    navigate('/login');
+    return;
+   }
 
-    console.log(passwordData);
-    alert("Password updated successfully!");
+   if(passwordData.newPassword !== passwordData.confirmPassword){
+    alert("New Password And Confirm Password Not Match!");
+    return;
+   }
+
+   axios.post(`http://127.0.0.1:3000/admin/changepassword/${id}`,{
+    oldpassword:passwordData.oldPassword,
+    newpassword:passwordData.newPassword
+   }).then((res) => {
+    if(res.data.flag === 1){
+      alert(res.data.msg);
+      navigate('/admin/dashboard');
+    }else{
+      alert(res.data.msg);
+    }
+   }).catch((err) => console.log(err))
   };
 
   return (
