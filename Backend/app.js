@@ -704,7 +704,7 @@ app.post('/admin/forgotpassword',(req,res) => {
             }
         });
 
-        const frontend = process.env.FRONTEND_URL;
+        const frontend = process.env.ADMIN_URL;
         const resetLink = `${frontend}/adminresetpassword/${saveUser.resetToken}`;
 
         return transporter.sendMail({
