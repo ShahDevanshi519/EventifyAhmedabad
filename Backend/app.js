@@ -31,6 +31,8 @@ const EventTb = require('./models/EventSchema');
 const AdminTb = require('./models/MyAdminSchema');
 const ContactTb = require('./models/ContactSchema');
 const BookingTb = require('./models/BookingSchema');
+const FeedbackTb = require('./models/FeedbackSchema');
+const WishlistTb = require('./models/WishlistSchema');
 const verifyToken = require('./verifyToken');
 
 const MONGO_URL = process.env.MONGO_URL
@@ -272,6 +274,105 @@ app.post('/resetpassword/:token',(req,res) => {
         .then(() => res.json({flag:1,msg:"Your Password Reset Successfully"}))
         .catch(() => res.json({flag:0,msg:"Your Password Not Reset..."}))
     }).catch((err) => console.log(err))
+})
+
+// Feedback-Rating For Particular Event
+app.post("/event/rating",verifyToken,(req,res) => {
+    const userId = req.user.id;
+    const {eventId,rating,feedback} = req.body;
+
+    BookingTb.findOne({userId:userId,eventId:eventId})
+    .then((booking) => {
+        if(!booking){
+            throw new Error("Do booking for this event! Than you will be provide feedback and rating for this event");
+        }
+
+        return FeedbackTb.findOne({userId:userId,eventId:eventId})
+    }).then((feedbackUser) => {
+        if(feedbackUser){
+            throw new Error("Your already submitted your feedback & rating")
+        }
+
+        return FeedbackTb.create({userId,eventId,rating,feedback})
+    }).then((result) => {
+        if(result){
+            res.json({flag:1,msg:"Thanks For Your Feedback!"})
+        }else{
+            res.json({flag:0,msg:"Server Problem!"})
+        }
+    })
+    .catch((err) => res.json({flag:0,msg:err.message}))
+})
+
+// Display Feedback On Page
+app.get('/event/feedback/:eventId',(req,res) => {
+    const eventId = req.params.eventId;
+    FeedbackTb.find({eventId:eventId})
+    .populate("userId","fullName")
+    .then((data) => res.json(data))
+    .catch((err) => res.json(err))
+})
+
+// Display Feedback On Admin Side
+app.get('/admin/event/feedback',(req,res) => {
+    FeedbackTb.find()
+    .populate("userId","fullName")
+    .populate("eventId","title")
+    .then((data) => res.json(data))
+    .catch((err) => res.json(err))
+})
+
+// Delete The Particular Feedback & Rating Admin Side
+app.delete('/admin/event/feedbackdelete/:id',(req,res) => {
+    FeedbackTb.findByIdAndDelete(req.params.id)
+    .then(() => res.json({flag:1,msg:"Feedback & Rating Deleted Successfully"}))
+    .catch((err) => res.json({flag:0,msg:err.message}))
+})
+
+// Wishlist User Side
+app.post('/event/wishlist',verifyToken,(req,res) => {
+    const userId = req.user.id;
+    const {eventId} = req.body;
+
+    WishlistTb.findOne({userId,eventId})
+    .then((existingUser) => {
+        if(existingUser){
+            return res.json({flag:0,msg:"You Already Add This Event Into The Wishlist"})
+        }
+
+        return WishlistTb.create({ userId,eventId });
+    }).then((saveUser) => {
+        if(saveUser){
+            return res.json({flag:1,msg:"Your Event Is Added Into The Wishlist!"})
+        }
+
+    }).catch((err) => res.json({flag:0,msg:"Your Event Id Not Addedd To Wishlist! Something Went Wrong!"}))
+})
+
+// Wishlist Display
+app.get('/fetch/wishlist',verifyToken,(req,res) => {
+    const userId = req.user.id;
+
+    WishlistTb.find({userId:userId})
+    .populate("eventId","eventImage title date time price venue")
+    .then((data) => res.json(data))
+    .catch((err) => res.json(err))
+})
+
+// Delete The Event From The Wishlist
+app.delete('/event/wishlist/delete/:id',(req,res) => {
+    WishlistTb.findByIdAndDelete(req.params.id)
+    .then(() => res.json({flag:1,msg:"Event Is Deleted Successfully!"}))
+    .catch((err) => console.log(err))
+})
+
+// Admin Side Wishlist
+app.get('/admin/wishlist',(req,res) => {
+    WishlistTb.find()
+    .populate("userId","fullName")
+    .populate("eventId","eventImage title date time price venue")
+    .then((data) => res.json(data))
+    .catch((err) => console.log(err))
 })
 
 // Event Page Render
