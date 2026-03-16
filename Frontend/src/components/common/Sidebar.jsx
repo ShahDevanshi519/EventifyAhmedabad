@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Lock, Ticket, XCircle, LogOut, User } from 'lucide-react';
+import { LayoutDashboard, Lock, Ticket, XCircle, LogOut, User, Heart } from 'lucide-react';
 
 export default function Sidebar() {
   const navigate = useNavigate();
@@ -10,6 +10,7 @@ export default function Sidebar() {
     { label: 'Edit Profile', icon: User, path: '/dashboard?tab=profile' },
     { label: 'Your Bookings', icon: Ticket, path: '/dashboard?tab=bookings' },
     { label: 'Change Password', icon: Lock, path: '/dashboard?tab=password' },
+    { label: 'Wishlist', icon: Heart, path: '/dashboard?tab=wishlist' },
     // { label: 'Cancel Booking', icon: XCircle, path: '/dashboard?tab=cancel' },
   ];
 

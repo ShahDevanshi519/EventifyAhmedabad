@@ -5,6 +5,7 @@ import OverviewTab from './OverviewTab';
 import EditProfile from './EditProfile';
 import YourBookings from './YourBookings';
 import ChangePassword from './ChangePassword';
+import Wishlist from './Wishlist';
 import axios from 'axios';
 export default function Dashboard() {
   const [searchParams] = useSearchParams();
@@ -114,6 +115,10 @@ export default function Dashboard() {
 
             {activeTab === 'password' && (
               <ChangePassword />
+            )}
+
+            {activeTab === 'wishlist' && (
+              <Wishlist />
             )}
 
           </div>

@@ -11,6 +11,7 @@ export default function EventDetails() {
   // const [seatCount, setSeatCount] = useState(1);
   const [relatedevent, setRelatedEvent] = useState([]);
   const [upcomingEvent, setUpcomingEvent] = useState([]);
+  const [reviews, setReviews] = useState([]);
   const navigate = useNavigate();
   
   const [showBookingModal, setShowBookingModal] = useState(false);
@@ -35,7 +36,146 @@ export default function EventDetails() {
     axios.get("http://127.0.0.1:3000/upcoming-event")
       .then((res) => setUpcomingEvent(res.data))
       .catch((err) => console.log(err));
+
+    axios.get(`http://127.0.0.1:3000/event/feedback/${eventId}`)
+      .then((res) => setReviews(res.data))
+      .catch((err) => console.log(err));
   }, [eventId]);
+
+  const submitReview = () => {
+    const token = localStorage.getItem("AccessToken");
+
+    if(!token){
+      navigate('/signin');
+      return;
+    }
+
+    if(userRating === 0 || userReview.trim() === ""){
+      alert("Please provide rating and review");
+      return;
+    }
+
+    axios.post("http://127.0.0.1:3000/event/rating",{
+      eventId:eventId,
+      rating:userRating,
+      feedback:userReview
+    },{
+      headers:{
+        Authorization:`Bearer ${token}`
+      }
+    }).then((res) => {
+      if(res.data.flag === 1){
+        alert(res.data.msg);
+
+        return axios.get(`http://127.0.0.1:3000/event/feedback/${eventId}`);
+      }else{
+        alert(res.data.msg);
+      }
+    }).then((res) => {
+        if(res) setReviews(res.data);
+        setShowReviewModal(false);
+    }).catch((err) => {
+              if(err.response?.status === 401){
+                const refreshToken = localStorage.getItem("RefreshToken");
+        
+                if(!refreshToken){
+                  alert("Your Session Is Expired,Please Do Logout and Login Again");
+                  localStorage.clear();
+                  navigate('/signin');
+                  return;
+                }
+        
+                axios.post("http://127.0.0.1:3000/refreshToken",{refreshToken})
+                .then((res) => {
+                  const newAccessToken = res.data.access_token;
+        
+                  localStorage.setItem("AccessToken",newAccessToken);
+                  return axios.post("http://127.0.0.1:3000/event/rating",{
+                      eventId:eventId,
+                      rating:userRating,
+                      feedback:userReview
+                    },{
+                      headers:{
+                        Authorization:`Bearer ${token}`
+                      }
+                    });
+                }).then((res) => {
+                  if(res.data.flag === 1){
+                    alert(res.data.msg);
+                  }else{
+                    alert(res.data.msg);
+                  }
+                })
+                .catch((err) => {
+                  console.log(err);
+                  alert("Your Session Is Expired,Please Do Logout and Login Again")
+                  localStorage.clear();
+                  navigate('/signin');
+                })
+              }
+            })
+  }
+
+  const handelWishlist = () => {
+
+    const token = localStorage.getItem("AccessToken");
+    
+        if(!token){
+          navigate('/signin');
+          return;
+        }
+    
+        // setIsLiked(!isLiked);
+        
+        axios.post("http://127.0.0.1:3000/event/wishlist",{eventId:event._id},{
+          headers:{
+            Authorization:`Bearer ${token}`
+          }
+        }).then((res) => {
+          if(res.data.flag === 1){
+            alert(res.data.msg);
+            navigate('/dashboard?tab=wishlist');
+          }else{
+            alert(res.data.msg);
+          }
+        }).catch((err) => {
+                  if(err.response?.status === 401){
+                    const refreshToken = localStorage.getItem("RefreshToken");
+            
+                    if(!refreshToken){
+                      alert("Your Session Is Expired,Please Do Logout and Login Again");
+                      localStorage.clear();
+                      navigate('/signin');
+                      return;
+                    }
+            
+                    axios.post("http://127.0.0.1:3000/refreshToken",{refreshToken})
+                    .then((res) => {
+                      const newAccessToken = res.data.access_token;
+            
+                      localStorage.setItem("AccessToken",newAccessToken);
+                      return axios.post("http://127.0.0.1:3000/event/wishlist",{eventId:event._id},{
+                      headers:{
+                        Authorization:`Bearer ${token}`
+                      }
+                    })
+                    }).then((res) => {
+                      if(res.data.flag === 1){
+                        alert(res.data.msg);
+                        navigate('/dashboard?tab=wishlist');
+                      }else{
+                        alert(res.data.msg);
+                      }
+                    })
+                    .catch((err) => {
+                      console.log(err);
+                      alert("Your Session Is Expired,Please Do Logout and Login Again")
+                      localStorage.clear();
+                      navigate('/signin');
+                    })
+                  }
+                })
+  }
 
   if (!event) {
     return (
@@ -183,23 +323,24 @@ export default function EventDetails() {
             <div className="space-y-4 pt-8">
               <h2 className="text-2xl font-bold text-gray-800">Reviews & Ratings</h2>
               <div className="space-y-3">
-                {[
-                  { name: 'Priya Sharma', rating: 5, comment: 'Amazing event! Worth every penny.' },
-                  { name: 'Rajesh Kumar', rating: 5, comment: 'Best experience ever!' },
-                  { name: 'Sneha Patel', rating: 4, comment: 'Great event with good organization.' },
-                ].map((review, index) => (
-                  <div key={index} className="bg-white border border-gray-100 rounded-lg p-4 shadow-sm">
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="font-bold text-gray-800">{review.name}</p>
-                      <div className="flex gap-1">
-                        {[...Array(5)].map((_, i) => (
-                          <span key={i} className={i < review.rating ? 'text-yellow-400' : 'text-gray-300'}>⭐</span>
-                        ))}
+                {reviews.length > 0 ? (
+                  reviews.map((review, index) => (
+                    <div key={index} className="bg-white border border-gray-100 rounded-lg p-4 shadow-sm">
+                      <div className="flex items-center justify-between mb-2">
+                        {/* Accessing name from the populated userId */}
+                        <p className="font-bold text-gray-800">{review.userId?.fullName || 'Anonymous'}</p>
+                        <div className="flex gap-1">
+                          {[...Array(5)].map((_, i) => (
+                            <span key={i} className={i < review.rating ? 'text-yellow-400' : 'text-gray-300'}>⭐</span>
+                          ))}
+                        </div>
                       </div>
+                      <p className="text-gray-600">{review.feedback}</p>
                     </div>
-                    <p className="text-gray-600">{review.comment}</p>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <p className="text-gray-500 italic">No reviews yet. Be the first to review!</p>
+                )}
               </div>
               <button
                 onClick={() => setShowReviewModal(true)}
@@ -278,9 +419,12 @@ export default function EventDetails() {
                 Proceed to Book
               </button>
 
-              <button className="w-full flex items-center justify-center gap-2 border-2 border-gray-100 text-gray-500 py-3 rounded-lg font-bold hover:bg-gray-50 transition-colors">
-                <Share2 size={18} />
-                Share Event
+              <button onClick={() => handelWishlist()}
+                className="w-full py-4 text-white font-bold rounded-xl 
+                       bg-gradient-to-r from-purple-500 via-pink-500 to-purple-500
+                       hover:scale-[1.02] transition-all duration-300 shadow-lg shadow-purple-100"
+              >
+                Add To Wishlist
               </button>
             </div>
           </div>
@@ -319,11 +463,7 @@ export default function EventDetails() {
             <div className="flex justify-end gap-3">
               <button onClick={() => setShowReviewModal(false)} className="px-6 py-2 rounded-lg border border-gray-300 text-gray-700 font-bold hover:bg-gray-100">Cancel</button>
               <button
-                onClick={() => {
-                  setShowReviewModal(false);
-                  setUserRating(0);
-                  setUserReview('');
-                }}
+                onClick={() => submitReview()}
                 className="px-6 py-2 text-white font-bold rounded-lg bg-gradient-to-r from-purple-500 to-pink-500"
               >
                 Submit

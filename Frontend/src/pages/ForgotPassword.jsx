@@ -5,7 +5,7 @@ import axios from 'axios';
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');
-  const [submitted, setSubmitted] = useState(false);
+  const [submitted] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = (e) => {
@@ -15,7 +15,7 @@ export default function ForgotPassword() {
     .then((res) => {
       if(res.data.flag === 1){
         alert(res.data.msg);
-        // navigate('/signin');
+        navigate('/signin');
       }else{
         alert(res.data.msg);
       }

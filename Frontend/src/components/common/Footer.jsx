@@ -9,7 +9,7 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           {/* About */}
           <div>
-            <h3 className="text-2xl font-bold mb-4 gradient-text">EventifyAhmedabad</h3>
+            <h3 className="text-2xl font-bold mb-4 gradient-text">Eventify</h3>
             <p className="text-purple-200 text-sm">
               Your ultimate destination for discovering and booking amazing events in Ahmedabad.
             </p>

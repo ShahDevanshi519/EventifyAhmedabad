@@ -1,17 +1,86 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Heart, MapPin, Calendar, Star } from "lucide-react";
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
-export default function EventCard({ event, onAddToWishlist, variant = "large" }) {
-  const [imageError, setImageError] = React.useState(false);
+export default function EventCard({ event, variant = "large" }) {
+  const [imageError, setImageError] = useState(false);
+
+  const navigate = useNavigate();
   
-const cardWidth = variant === "small" ? "w-[280px]" : "w-[354px]";
-const imageHeight = variant === "small" ? "h-32" : "h-36";
+  const [isLiked, setIsLiked] = useState(false);
+
+  const cardWidth = variant === "small" ? "w-[280px]" : "w-[354px]";
+  const imageHeight = variant === "small" ? "h-32" : "h-36";
+
+  const handleWishlistClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation(); 
+    
+    const token = localStorage.getItem("AccessToken");
+
+    if(!token){
+      navigate('/signin');
+      return;
+    }
+
+    setIsLiked(!isLiked);
+    
+    axios.post("http://127.0.0.1:3000/event/wishlist",{eventId:event._id},{
+      headers:{
+        Authorization:`Bearer ${token}`
+      }
+    }).then((res) => {
+      if(res.data.flag === 1){
+        alert(res.data.msg);
+        navigate('/dashboard?tab=wishlist');
+      }else{
+        alert(res.data.msg);
+      }
+    }).catch((err) => {
+              if(err.response?.status === 401){
+                const refreshToken = localStorage.getItem("RefreshToken");
+        
+                if(!refreshToken){
+                  alert("Your Session Is Expired,Please Do Logout and Login Again");
+                  localStorage.clear();
+                  navigate('/signin');
+                  return;
+                }
+        
+                axios.post("http://127.0.0.1:3000/refreshToken",{refreshToken})
+                .then((res) => {
+                  const newAccessToken = res.data.access_token;
+        
+                  localStorage.setItem("AccessToken",newAccessToken);
+                  return axios.post("http://127.0.0.1:3000/event/wishlist",{eventId:event._id},{
+                  headers:{
+                    Authorization:`Bearer ${token}`
+                  }
+                })
+                }).then((res) => {
+                  if(res.data.flag === 1){
+                    alert(res.data.msg);
+                    navigate('/dashboard?tab=wishlist');
+                  }else{
+                    alert(res.data.msg);
+                  }
+                })
+                .catch((err) => {
+                  console.log(err);
+                  alert("Your Session Is Expired,Please Do Logout and Login Again")
+                  localStorage.clear();
+                  navigate('/signin');
+                })
+              }
+            })
+  };
+
   return (
     <Link to={`/event/${event._id}`}>
       <div className={`bg-white rounded-xl overflow-hidden shadow hover:scale-[1.03] transition cursor-pointer group flex-shrink-0 ${cardWidth}`}>
         
-        {/* Dynamic Image Height */}
         <div className={`relative ${imageHeight} overflow-hidden bg-gradient-to-br from-purple-200 to-pink-200`}>
           {!imageError ? (
             <img
@@ -27,18 +96,20 @@ const imageHeight = variant === "small" ? "h-32" : "h-36";
           )}
 
           <button
-            onClick={(e) => {
-              e.preventDefault();
-              onAddToWishlist(event._id);
-            }}
-            className="absolute bottom-2 right-2 bg-white p-1.5 rounded-full shadow hover:bg-gray-100 transition"
+            onClick={handleWishlistClick}
+            className="absolute bottom-2 right-2 bg-white p-1.5 rounded-full shadow hover:bg-gray-100 transition group/heart"
           >
-            <Heart size={16} />
+            {/* 4. Dynamic styling based on isLiked state */}
+            <Heart 
+              size={16} 
+              className={`transition-colors duration-300 ${
+                isLiked ? "fill-red-500 text-red-500" : "text-gray-600"
+              }`} 
+            />
           </button>
         </div>
 
         <div className="p-3">
-          {/* Title - using text-sm for both to keep it readable */}
           <h3 className="font-semibold text-sm mb-1 line-clamp-2 h-10">{event.title}</h3>
 
           <div className="flex items-center gap-1 mb-2">
