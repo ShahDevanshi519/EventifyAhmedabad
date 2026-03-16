@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, Users, Calendar, Settings, ChevronDown, Contact } from "lucide-react";
+import { LayoutDashboard, Users, Calendar, Settings, ChevronDown, Contact, Star, Ticket,Heart } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from 'react-router-dom';
 
@@ -136,8 +136,36 @@ export default function Sidebar() {
             }`
           }
         >
-          <Users size={20} />
+          <Ticket size={20} />
           Booking
+        </NavLink>
+
+        {/* Feedback & Rating */}
+        <NavLink
+          to="/admin/feedback/view"
+          className={({ isActive }) =>
+            `${linkStyle} ${
+              isActive ? "bg-purple-50 text-purple-700 shadow-lg scale-105" : "text-gray-600"
+            }`
+          }
+        >
+          {/* <MessageSquare size={20}/> */}
+          <Star size={20} />
+          Feedback & Rating
+        </NavLink>
+
+        {/* Wishlist */}
+        <NavLink
+          to="/admin/wishlist/view"
+          className={({ isActive }) =>
+            `${linkStyle} ${
+              isActive ? "bg-purple-50 text-purple-700 shadow-lg scale-105" : "text-gray-600"
+            }`
+          }
+        >
+          {/* <MessageSquare size={20}/> */}
+          <Heart size={20} />
+          Wishlist
         </NavLink>
 
         {/* Settings */}
@@ -192,7 +220,7 @@ export default function Sidebar() {
 
       {/* Footer */}
       <div className="mt-auto text-center text-gray-400 text-xs pt-6">
-        © {new Date().getFullYear()} Eventify Ahmedabad
+        © {new Date().getFullYear()} Eventify💜
       </div>
 
       {/* Animation Styles */}
