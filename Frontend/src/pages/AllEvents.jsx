@@ -30,6 +30,7 @@ export default function AllEvents() {
   }, [area]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setFilters(prev => ({
       ...prev,
       area: area || "all"
