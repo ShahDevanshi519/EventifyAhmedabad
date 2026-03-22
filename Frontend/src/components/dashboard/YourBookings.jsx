@@ -49,6 +49,11 @@ useEffect(() => {
       }
     })
 },[])
+
+  const handelTicekt = (id) => {
+    navigate(`/ticekt/${id}`);
+  }
+  
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold text-gray-800">Your Bookings</h2>
@@ -80,7 +85,7 @@ useEffect(() => {
                   </div>
                 </div>
                 <div className="flex gap-2 w-full sm:w-auto">
-                  <button className="flex-1 sm:flex-none px-4 py-2 bg-purple-100 text-purple-700 rounded-lg font-bold hover:bg-purple-200 transition-colors">
+                  <button onClick={() => handelTicekt(booking._id)} className="flex-1 sm:flex-none px-4 py-2 bg-purple-100 text-purple-700 rounded-lg font-bold hover:bg-purple-200 transition-colors">
                     View Ticket
                   </button>
                   <button className="flex-1 sm:flex-none px-4 py-2 bg-blue-100 text-blue-700 rounded-lg font-bold hover:bg-blue-200 transition-colors">
