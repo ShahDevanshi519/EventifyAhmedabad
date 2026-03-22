@@ -604,22 +604,165 @@ app.get("/event/category/:category",(req,res) => {
 })
 
 // Booking API
-app.post('/booking',verifyToken,(req,res) => {
-    
-    const bookingData = {
-        userId:req.user.id,
-        eventId : req.body.eventId,
-        numberOfTickets : req.body.numberOfTickets,
-        totalAmount : req.body.totalAmount
-    }
+app.post('/booking', verifyToken, (req, res) => {
 
-    BookingTb.create(bookingData)
-    .then((data) => res.json({flag:1,msg:"Booking Done Successfully",booking:data}))
-    .catch((err) => res.json({flag:0,msg:"Booking Is Not Done",error:err.message}))
-})
+    const { eventId, numberOfTickets, totalAmount } = req.body;
+
+    const nodemailer = require("nodemailer");
+    const transporter = nodemailer.createTransport({
+        host: "smtp.gmail.com",
+        port: 587,
+        secure: false,
+        auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS
+        }
+    });
+
+    BookingTb.findOne({
+        userId: req.user.id,
+        eventId: eventId
+    })
+    .then((existingBooking) => {
+
+        if (existingBooking) {
+            return res.json({
+                flag: 0,
+                msg: "You Already Did The Booking! Please Check Your Booking!"
+            });
+        }
+
+        return BookingTb.create({
+            userId: req.user.id,
+            eventId: eventId,
+            numberOfTickets: numberOfTickets,
+            totalAmount: totalAmount
+        });
+
+    })
+    .then((bookingData) => {
+
+        if (!bookingData) return;
+
+        return BookingTb.findById(bookingData._id)
+            .populate("userId", "fullName email")
+            .populate("eventId", "title");
+    })
+    .then((bookingData) => {
+
+        return transporter.sendMail({
+            from: `"Eventify" <${process.env.EMAIL_USER}>`,
+            to: "eventifyadmin0312@gmail.com",
+            subject: "New Booking Received",
+            html: `
+                <h2>New Booking Alert</h2>
+                <table border="1" cellpadding="10" cellspacing="0" style="border-collapse:collapse;">
+                    <tr>
+                        <th>Field</th>
+                        <th>Details</th>
+                    </tr>
+                    <tr>
+                        <td>User Name</td>
+                        <td>${bookingData.userId.fullName}</td>
+                    </tr>
+                    <tr>
+                        <td>User Email</td>
+                        <td>${bookingData.userId.email}</td>
+                    </tr>
+                    <tr>
+                        <td>Event</td>
+                        <td>${bookingData.eventId.title}</td>
+                    </tr>
+                    <tr>
+                        <td>Tickets</td>
+                        <td>${bookingData.numberOfTickets}</td>
+                    </tr>
+                    <tr>
+                        <td>Price</td>
+                        <td>₹${bookingData.totalAmount}</td>
+                    </tr>
+                    <tr>
+                        <td>Booking Status</td>
+                        <td>${bookingData.bookingStatus}</td>
+                    </tr>
+                    <tr>
+                        <td>Booking Date</td>
+                        <td>${bookingData.bookingDate}</td>
+                    </tr>
+                </table>
+            `
+        })
+        .then(() => {
+            return transporter.sendMail({
+                from: `"Eventify" <${process.env.EMAIL_USER}>`,
+                to: bookingData.userId.email,
+                subject: "Booking Confirmation",
+                html: `
+                    <h2 style="color:green;">Booking Confirmed</h2>
+                    <table border="1" cellpadding="10" cellspacing="0" style="border-collapse:collapse;">
+                        <tr>
+                            <th>Field</th>
+                            <th>Details</th>
+                        </tr>
+                        <tr>
+                            <td>Name</td>
+                            <td>${bookingData.userId.fullName}</td>
+                        </tr>
+                        <tr>
+                            <td>Event</td>
+                            <td>${bookingData.eventId.title}</td>
+                        </tr>
+                        <tr>
+                        <td>Tickets</td>
+                        <td>${bookingData.numberOfTickets}</td>
+                    </tr>
+                    <tr>
+                        <td>Price</td>
+                        <td>₹${bookingData.totalAmount}</td>
+                    </tr>
+                    <tr>
+                        <td>Booking Status</td>
+                        <td>${bookingData.bookingStatus}</td>
+                    </tr>
+                    <tr>
+                        <td>Booking Date</td>
+                        <td>${bookingData.bookingDate}</td>
+                    </tr>
+                    </table>
+                    <br/>
+                    <p>Thank You For Booking With Eventify</p>
+                `
+            });
+        });
+    })
+    .then(() => {
+        res.json({
+            flag: 1,
+            msg: "Booking Successful & Emails Sent"
+        });
+    })
+    .catch((err) => {
+        console.log(err);
+        res.json({
+            flag: 0,
+            msg: "Booking or Email Failed",
+            error: err.message
+        });
+    });
+
+});
 
 app.get('/booking/display',verifyToken,(req,res) => {
     UserTb.findById(req.user.id)
+    .then((data) => res.json(data))
+    .catch((err) => res.json(err))
+})
+
+// Ticekt UI Display
+app.get('/ticketdisplay/:id',(req,res) => {
+    BookingTb.findById(req.params.id)
+    .populate("userId","fullName")
+    .populate("eventId","title date time venue area eventImage category")
     .then((data) => res.json(data))
     .catch((err) => res.json(err))
 })
@@ -630,7 +773,6 @@ app.get('/display-booking', (req, res) => {
     .populate("userId","fullName") 
     .populate("eventId","title") 
     .then((data) => {
-         console.log(data)
         res.json(data)})
     .catch((err) => res.json(err))
 })
