@@ -14,7 +14,7 @@ import Dashboard from './pages/Dashboard';
 import Contact from './pages/Contact';
 import About from './pages/About';
 import ResetPassword from './pages/ResetPassword';
-
+import TicektUi from './pages/TicektUi';
 
 export default function App() {
   return (
@@ -93,6 +93,15 @@ export default function App() {
           element={
             <MainLayout>
               <ResetPassword />
+            </MainLayout>
+          }
+        />
+
+          <Route
+          path="/ticekt/:id"
+          element={
+            <MainLayout>
+              <TicektUi/>
             </MainLayout>
           }
         />
