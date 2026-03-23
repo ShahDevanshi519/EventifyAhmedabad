@@ -29,7 +29,7 @@ export default function ViewBooking() {
               <th className="p-4">Total Price</th>
               <th className="p-4">Booking Status</th>
               <th className="p-4">Booking Date</th>
-              <th className="p-4">Action</th>
+              {/* <th className="p-4">Action</th> */}
             </tr>
           </thead>
 
@@ -47,9 +47,9 @@ export default function ViewBooking() {
                 {/* <button className="p-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition">
                   <Edit size={16} />
                   </button> */}
-                <button className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition">
+                {/* <button className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition">
                   <Trash2 size={16} />
-                  </button>
+                  </button> */}
                 </td>
               </tr>
             ))}
