@@ -4,7 +4,29 @@ import axios from "axios";
 import { MapPin, Calendar, Clock, Heart, ArrowLeft, Share2 } from 'lucide-react';
 import BookingModal from '../components/booking/BookingModal';
 import EventCard from '../components/events/EventCard';
-
+ 
+function FAQItem({ question, answer }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className={`border rounded-xl overflow-hidden transition-all duration-300 bg-white ${open ? 'border-purple-300 shadow-md' : 'border-gray-100'}`}>
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-purple-50 transition-colors"
+      >
+        <span className="font-semibold text-gray-800 text-sm sm:text-base">{question}</span>
+        <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ml-3 text-white font-bold text-lg transition-transform duration-300 bg-gradient-to-br from-purple-500 to-pink-500 ${open ? 'rotate-45' : ''}`}>
+          +
+        </div>
+      </button>
+      {open && (
+        <div className="px-5 pb-4 text-gray-600 text-sm leading-relaxed border-t border-gray-100 pt-3">
+          {answer}
+        </div>
+      )}
+    </div>
+  );
+}
+ 
 export default function EventDetails() {
   const { eventId } = useParams();
   const [event, setEvent] = useState(null);
@@ -20,7 +42,7 @@ export default function EventDetails() {
   const [userRating, setUserRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [userReview, setUserReview] = useState('');
-
+ 
   useEffect(() => {
     axios.get(`http://127.0.0.1:3000/event/${eventId}`)
       .then((res) => {
@@ -28,33 +50,33 @@ export default function EventDetails() {
         setIsFavorite(res.data.isLoved || false);
       })
       .catch((err) => console.log(err.data?.msg));
-
+ 
     axios.get(`http://127.0.0.1:3000/related-event/${eventId}`)
       .then((res) => setRelatedEvent(res.data))
       .catch((err) => console.log(err));
-
+ 
     axios.get("http://127.0.0.1:3000/upcoming-event")
       .then((res) => setUpcomingEvent(res.data))
       .catch((err) => console.log(err));
-
+ 
     axios.get(`http://127.0.0.1:3000/event/feedback/${eventId}`)
       .then((res) => setReviews(res.data))
       .catch((err) => console.log(err));
   }, [eventId]);
-
+ 
   const submitReview = () => {
     const token = localStorage.getItem("AccessToken");
-
+ 
     if(!token){
       navigate('/signin');
       return;
     }
-
+ 
     if(userRating === 0 || userReview.trim() === ""){
       alert("Please provide rating and review");
       return;
     }
-
+ 
     axios.post("http://127.0.0.1:3000/event/rating",{
       eventId:eventId,
       rating:userRating,
@@ -66,7 +88,7 @@ export default function EventDetails() {
     }).then((res) => {
       if(res.data.flag === 1){
         alert(res.data.msg);
-
+ 
         return axios.get(`http://127.0.0.1:3000/event/feedback/${eventId}`);
       }else{
         alert(res.data.msg);
@@ -115,9 +137,9 @@ export default function EventDetails() {
               }
             })
   }
-
+ 
   const handelWishlist = () => {
-
+ 
     const token = localStorage.getItem("AccessToken");
     
         if(!token){
@@ -176,7 +198,7 @@ export default function EventDetails() {
                   }
                 })
   }
-
+ 
   if (!event) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -184,7 +206,7 @@ export default function EventDetails() {
       </div>
     );
   }
-
+ 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50 pb-16">
       {/* Back Button */}
@@ -197,7 +219,7 @@ export default function EventDetails() {
           Back
         </button>
       </div>
-
+ 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
@@ -216,7 +238,7 @@ export default function EventDetails() {
                 </div>
               )}
             </div>
-
+ 
             {/* Title & Badges */}
             <div>
               <div className="flex items-start justify-between mb-4">
@@ -246,19 +268,19 @@ export default function EventDetails() {
                 </button>
               </div>
             </div>
-
+ 
             {/* About Event */}
             <div className="space-y-4">
               <h2 className="text-2xl font-bold text-gray-800">About This Event</h2>
               <p className="text-gray-600 leading-relaxed text-lg">
                 {event.description}
               </p>
-
+ 
               <p className="text-gray-600 leading-relaxed">
                 Join us for an unforgettable experience! This is one of the most anticipated
                 events in Ahmedabad. Secure your seats now and be part of this amazing event.
               </p>
-
+ 
               {event.whatToExpect && (
                 <div className="space-y-4 pt-4">
                   <h2 className="text-2xl font-bold text-gray-800">What to Expect</h2>
@@ -269,14 +291,14 @@ export default function EventDetails() {
                   </ul>
                 </div>
               )}
-
+ 
               {event.note && (
                 <div className="glass rounded-xl p-4 border-l-4 border-yellow-400 bg-amber-50">
                   <h3 className="text-xl font-bold text-gray-900 mb-1">Note</h3>
                   <p className="text-gray-600">{event.note}</p>
                 </div>
               )}
-
+ 
               <div className="glass rounded-xl p-5 border-l-4 border-red-500 bg-red-50 mt-6">
                 <h2 className="text-2xl font-bold text-red-700 mb-4">Refund Policy</h2>
                 <ul className="list-disc pl-6 text-black-700 space-y-1 text-sm">
@@ -287,7 +309,7 @@ export default function EventDetails() {
                 </ul>
               </div>
             </div>
-
+ 
             {/* Upcoming Events Table */}
             <div className="space-y-6 pt-8">
               <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
@@ -318,7 +340,7 @@ export default function EventDetails() {
                 </table>
               </div>
             </div>
-
+ 
             {/* Reviews & Ratings */}
             <div className="space-y-4 pt-8">
               <h2 className="text-2xl font-bold text-gray-800">Reviews & Ratings</h2>
@@ -349,7 +371,7 @@ export default function EventDetails() {
                 Add Review & Rating
               </button>
             </div>
-
+ 
             {/* Related Events */}
             <div className="space-y-4 pt-8">
               <h2 className="text-2xl font-bold text-gray-800">Related Events</h2>
@@ -359,8 +381,49 @@ export default function EventDetails() {
                 ))}
               </div>
             </div>
+ 
+            {/* FAQ Section */}
+            <div className="space-y-4 pt-8">
+              <span className="inline-block text-xs font-bold px-3 py-1 rounded-lg bg-purple-100 text-purple-700 mb-2">FAQ</span>
+              <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#a855f7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+                Frequently Asked Questions
+              </h2>
+ 
+              {[
+                {
+                  q: "Can I cancel or get a refund after booking?",
+                  a: "No refunds are provided once a ticket is booked. Please review our Refund Policy section above for full details on all cancellation scenarios."
+                },
+                {
+                  q: "How do I receive my ticket after booking?",
+                  a: "After a successful booking, the user is redirected to the dashboard. From there, the user can view their booked tickets and download them as a PDF. Each ticket includes all booking details."
+                },
+                {
+                  q: "Is the venue wheelchair accessible?",
+                  a: "Most of our venues are wheelchair accessible. We recommend contacting the venue directly or reaching out to our support team for specific accessibility requirements."
+                },
+                {
+                  q: "Is my payment secure during booking?",
+                  a: "Yes, all payments are processed through secure payment gateways to ensure your transaction is safe."
+                },
+                {
+                  q: "What should I carry to the event?",
+                  a: "Please carry a valid photo ID and your booking confirmation (digital or printed). Entry may be denied without proper identification."
+                },
+                {
+                  q: "How early should I arrive at the venue?",
+                  a: "We recommend arriving at least 30 minutes before the event start time to allow for check-in, security, and finding your seat comfortably."
+                },
+              ].map((item, index) => (
+                <FAQItem key={index} question={item.q} answer={item.a} />
+              ))}
+            </div>
+ 
           </div>
-
+ 
           {/* RIGHT COLUMN - SIDEBAR INFO (BOOKING CARD) */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-2xl p-6 sticky top-24 shadow-xl border border-gray-100 space-y-6">
@@ -380,7 +443,7 @@ export default function EventDetails() {
                   </p>
                 </div>
               </div>
-
+ 
               {/* Event Time */}
               <div className="flex items-start gap-4">
                 <Clock className="text-purple-600 mt-1" size={24} />
@@ -389,7 +452,7 @@ export default function EventDetails() {
                   <p className="text-lg font-bold text-gray-800">{event.time}</p>
                 </div>
               </div>
-
+ 
               {/* Event Venue */}
               <div className="flex items-start gap-4">
                 <MapPin className="text-purple-600 mt-1" size={24} />
@@ -398,11 +461,9 @@ export default function EventDetails() {
                   <p className="text-lg font-bold text-gray-800">{event.venue}</p>
                 </div>
               </div>
-
+ 
               <hr className="border-gray-100" />
-
-              
-
+ 
               {/* Price */}
               <div>
                 <p className="text-sm text-gray-400 mb-1">Tickets starting from</p>
@@ -418,7 +479,7 @@ export default function EventDetails() {
               >
                 Proceed to Book
               </button>
-
+ 
               <button onClick={() => handelWishlist()}
                 className="w-full py-4 text-white font-bold rounded-xl 
                        bg-gradient-to-r from-purple-500 via-pink-500 to-purple-500
@@ -430,12 +491,12 @@ export default function EventDetails() {
           </div>
         </div>
       </div>
-
+ 
       {/* Modals */}
       {showBookingModal && (
         <BookingModal event={event} onClose={() => setShowBookingModal(false)} />
       )}
-
+ 
       {showReviewModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl relative">
