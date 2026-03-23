@@ -370,7 +370,7 @@ app.delete('/event/wishlist/delete/:id',(req,res) => {
 app.get('/admin/wishlist',(req,res) => {
     WishlistTb.find()
     .populate("userId","fullName")
-    .populate("eventId","eventImage title date time price venue")
+    .populate("eventId","eventImage title date time price venue area")
     .then((data) => res.json(data))
     .catch((err) => console.log(err))
 })
