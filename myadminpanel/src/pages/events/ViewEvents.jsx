@@ -1,11 +1,13 @@
 import { Table, Edit, Trash2, Eye, X } from "lucide-react";
 import axios from "axios";
 import React, { useState, useEffect } from "react";
+import { useNavigate } from 'react-router-dom';
 
 export default function ViewEvents() {
 
   const [events,setEvents] = useState([]);
   const [selectedEvent,setSelectedEvent] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(()=>{
     axios.get("http://localhost:3000/display-event")
@@ -82,7 +84,7 @@ export default function ViewEvents() {
                   </button>
 
                   {/* EDIT */}
-                  <button className="p-2 bg-blue-100 text-blue-600 rounded-lg">
+                  <button onClick={() => navigate(`/admin/events/edit/${event._id}`)} className="p-2 bg-blue-100 text-blue-600 rounded-lg">
                     <Edit size={16}/>
                   </button>
 
@@ -141,8 +143,7 @@ export default function ViewEvents() {
 
             <p><b>Price:</b> ₹{selectedEvent.price}</p>
             <p><b>Total Seats:</b> {selectedEvent.totalseats}</p>
-
-            <p><b>Available Seats:</b> {selectedEvent.seats}</p>
+            
             <p><b>Rating:</b> {selectedEvent.rating}</p>
 
             <p><b>Reviews:</b> {selectedEvent.reviews}</p>
