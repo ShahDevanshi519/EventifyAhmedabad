@@ -8,7 +8,7 @@ export default function EventFilter({ onFilterChange }) {
 
   const [price, setPrice] = useState(5000);
   const [date, setDate] = useState("all");
-  const [area, setArea] = useState("all");
+  const [area] = useState("all");
   const [category, setCategory] = useState("all");
 
   const categoryList = [
@@ -106,7 +106,7 @@ export default function EventFilter({ onFilterChange }) {
       </div>
 
       {/* Reset */}
-      <button
+      {/* <button
         onClick={() => {
           setDate("all");
           setPrice(5000);
@@ -116,7 +116,7 @@ export default function EventFilter({ onFilterChange }) {
         className="w-full border-2 border-purple-600 text-purple-600 py-1 rounded font-bold hover:bg-purple-50"
       >
         Reset
-      </button>
+      </button> */}
     </div>
   );
 }
