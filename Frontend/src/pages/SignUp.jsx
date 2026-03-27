@@ -175,7 +175,7 @@ const handleSignUp = (e) => {
             Join Us
           </h1>
           <p className="text-gray-600">
-            Create your EventifyAhmedabad account
+            Create your Eventify account
           </p>
         </div>
 

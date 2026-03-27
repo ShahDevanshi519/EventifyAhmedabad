@@ -113,7 +113,7 @@ export default function SignIn() {
             Welcome Back
           </h1>
           <p className="text-gray-600">
-            Sign in to your EventifyAhmedabad account
+            Sign in to your Eventify account
           </p>
         </div>
 
@@ -187,21 +187,21 @@ export default function SignIn() {
         </form>
 
         {/* Divider */}
-        <div className="my-6 flex items-center gap-3">
+        {/* <div className="my-6 flex items-center gap-3">
           <div className="flex-1 h-px bg-gray-300"></div>
           <span className="text-gray-500 text-sm">or</span>
           <div className="flex-1 h-px bg-gray-300"></div>
-        </div>
+        </div> */}
 
         {/* Social Login */}
-        <div className="grid grid-cols-2 gap-4 mb-6">
+        {/* <div className="grid grid-cols-2 gap-4 mb-6">
           <button className="flex items-center justify-center gap-2 py-2 border rounded-lg hover:bg-gray-50">
             🔵 <span className="text-sm">Google</span>
           </button>
           <button className="flex items-center justify-center gap-2 py-2 border rounded-lg hover:bg-gray-50">
             🟦 <span className="text-sm">Facebook</span>
           </button>
-        </div>
+        </div> */}
 
         {/* Sign Up */}
         <p className="text-center text-gray-600">
