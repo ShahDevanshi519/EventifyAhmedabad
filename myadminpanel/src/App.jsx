@@ -13,6 +13,9 @@ import EditProfile from "./pages/settings/EditProfile";
 import ResetPassword from "./pages/ResetPassword";
 import ViewFeedback from "./pages/feedback/ViewFeedback";
 import ViewWishlist from "./pages/wishlist/ViewWishlist";
+import AddTicket from "./pages/tickettype/AddTicket";
+import ViewTicket from "./pages/tickettype/ViewTicket";
+import EditEvent from "./pages/events/EditEvent";
 
 function App() {
   return (
@@ -28,7 +31,10 @@ function App() {
           <Route path="users" element={<ViewUsers />} />
           <Route path="contact" element={<ViewInquiry />} />
           <Route path="events/add" element={<AddEvent />} />
+          <Route path="events/edit/:id" element={<EditEvent />} />
           <Route path="events/view" element={<ViewEvents />} />
+          <Route path="tickettype/add" element={<AddTicket />} />
+          <Route path="tickettype/view" element={<ViewTicket />} />
           <Route path="booking" element={<ViewBooking />}/>
           <Route path="feedback/view" element={<ViewFeedback />}/>
           <Route path="wishlist/view" element={<ViewWishlist />}/>

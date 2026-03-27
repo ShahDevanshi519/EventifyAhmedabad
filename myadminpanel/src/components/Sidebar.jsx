@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 
 export default function Sidebar() {
   const [eventOpen, setEventOpen] = useState(false);
+  const [ticketOpen, setTicketOpen] = useState(false);
   const [settingOpen,setSettingOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -122,6 +123,50 @@ export default function Sidebar() {
                 }
               >
                 View Events
+              </NavLink>
+            </div>
+          </div>
+        </div>
+
+        {/* Ticekt Type */}
+        <div className="relative">
+          <button
+            onClick={() => setTicketOpen(!ticketOpen)}
+            className={`${linkStyle} w-full justify-between text-gray-600`}
+          >
+            <div className="flex items-center gap-3">
+              <Ticket size={20} />
+              Ticket Type
+            </div>
+            <ChevronDown
+              size={16}
+              className={`transition-transform duration-300 ${ticketOpen ? "rotate-180" : "rotate-0"}`}
+            />
+          </button>
+
+          <div
+            className={`overflow-hidden transition-all duration-500 ${ticketOpen ? "max-h-40 mt-2" : "max-h-0"}`}
+          >
+            <div className="flex flex-col gap-2 ml-4 mt-2 bg-white rounded-2xl shadow-lg p-3 border border-gray-100">
+              <NavLink
+                to="/admin/tickettype/add"
+                className={({ isActive }) =>
+                  `${dropdownLinkStyle} ${
+                    isActive ? "bg-purple-50 text-purple-700 shadow-md font-semibold" : "hover:bg-purple-50 hover:text-purple-700"
+                  }`
+                }
+              >
+                Add Ticekt Type
+              </NavLink>
+              <NavLink
+                to="/admin/tickettype/view"
+                className={({ isActive }) =>
+                  `${dropdownLinkStyle} ${
+                    isActive ? "bg-purple-50 text-purple-700 shadow-md font-semibold" : "hover:bg-purple-50 hover:text-purple-700"
+                  }`
+                }
+              >
+                View Ticekt Type
               </NavLink>
             </div>
           </div>
