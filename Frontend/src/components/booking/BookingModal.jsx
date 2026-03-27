@@ -5,17 +5,13 @@ import BookingStep2 from './BookingStep2';
 import BookingStep3 from './BookingStep3';
 
 export default function BookingModal({ event, onClose }) {
+
   const [step, setStep] = useState(1);
   const [bookingData, setBookingData] = useState({
     userDetails: { fullName: '', email: '', phone: '' },
-    seatCount: 1,
-    paymentDetails: {},
+    ticketSelections: [],
+    totalAmount: 0,
   });
-
-  // Calculate total with 10% convenience fee
-  const subtotal = event.price * bookingData.seatCount;
-  const convenienceFee = Math.floor(subtotal * 0.1);
-  const totalAmount = subtotal + convenienceFee;
 
   const handleStepComplete = (data) => {
     setBookingData((prev) => ({ ...prev, ...data }));
@@ -30,9 +26,9 @@ export default function BookingModal({ event, onClose }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose}></div>
 
-      <div className="relative bg-white rounded-3xl w-full max-w-2xl max-h-[95vh] overflow-y-auto shadow-2xl animate-scale-in">
-        
-        {/* Header with Back Button */}
+      <div className="relative bg-white rounded-3xl w-full max-w-2xl max-h-[95vh] overflow-y-auto shadow-2xl">
+
+        {/* Header */}
         <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white p-6 flex items-center justify-between sticky top-0 z-20">
           <div className="flex items-center gap-3">
             {step > 1 && step < 3 && (
@@ -44,7 +40,9 @@ export default function BookingModal({ event, onClose }) {
               {step === 3 ? "Booking Confirmed" : "Complete Your Booking"}
             </h2>
           </div>
-          <button onClick={onClose} className="hover:bg-white/20 p-2 rounded-full transition"><X size={24} /></button>
+          <button onClick={onClose} className="hover:bg-white/20 p-2 rounded-full transition">
+            <X size={24} />
+          </button>
         </div>
 
         {/* Progress Tracker */}
@@ -69,30 +67,29 @@ export default function BookingModal({ event, onClose }) {
 
         <div className="p-6">
           {step === 1 && (
-            <BookingStep1 
-              event={event} 
-              onNext={handleStepComplete} 
-              savedData={bookingData} 
+            <BookingStep1
+              event={event}
+              onNext={handleStepComplete}
+              savedData={bookingData}
             />
           )}
           {step === 2 && (
-            <BookingStep2 
-              event={event} 
-              bookingData={bookingData} 
-              totalAmount={totalAmount} 
-              onNext={handleStepComplete} 
-              onBack={handleBack} 
+            <BookingStep2
+              event={event}
+              bookingData={bookingData}
+              onNext={handleStepComplete}
+              onBack={handleBack}
             />
           )}
           {step === 3 && (
-            <BookingStep3 
-              event={event} 
-              bookingData={bookingData} 
-              totalAmount={totalAmount} 
-              onClose={onClose} 
+            <BookingStep3
+              event={event}
+              bookingData={bookingData}
+              onClose={onClose}
             />
           )}
         </div>
+
       </div>
     </div>
   );
