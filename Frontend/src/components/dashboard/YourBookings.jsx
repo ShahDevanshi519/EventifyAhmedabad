@@ -88,9 +88,9 @@ useEffect(() => {
                   <button onClick={() => handelTicekt(booking._id)} className="flex-1 sm:flex-none px-4 py-2 bg-purple-100 text-purple-700 rounded-lg font-bold hover:bg-purple-200 transition-colors">
                     View Ticket
                   </button>
-                  <button className="flex-1 sm:flex-none px-4 py-2 bg-blue-100 text-blue-700 rounded-lg font-bold hover:bg-blue-200 transition-colors">
+                  {/* <button className="flex-1 sm:flex-none px-4 py-2 bg-blue-100 text-blue-700 rounded-lg font-bold hover:bg-blue-200 transition-colors">
                     Download
-                  </button>
+                  </button> */}
                   <button className="flex-1 sm:flex-none px-4 py-2 bg-red-500 text-white rounded-lg font-bold hover:bg-red-600 transition-colors">
                     Cancel Booking
                   </button>

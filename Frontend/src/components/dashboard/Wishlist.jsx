@@ -70,7 +70,7 @@ export default function Wishlist() {
                   <div>
                     <div className="flex justify-between items-start">
                       <h3 className="text-xl font-bold text-gray-800 mb-2">{item.eventId.title}</h3>
-                      <p className="text-xl font-bold text-green-600">₹{item.eventId.price}</p>
+                      {/* <p className="text-xl font-bold text-green-600">₹{item.eventId.price}</p> */}
                     </div>
                     
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-6 mt-2">
