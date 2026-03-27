@@ -33,6 +33,7 @@ export default function Footer() {
               <li><Link to="/category/comedy" className="hover:text-white transition-colors">Comedy</Link></li>
               <li><Link to="/category/workshops" className="hover:text-white transition-colors">Workshops</Link></li>
               <li><Link to="/category/sports" className="hover:text-white transition-colors">Sports</Link></li>
+              <li><Link to="/category/festivals" className="hover:text-white transition-colors">Festivals</Link></li>
             </ul>
           </div>
 
@@ -64,7 +65,7 @@ export default function Footer() {
 
         <div className="border-t border-purple-700 pt-8">
           <div className="text-center text-purple-300 text-sm">
-            <p>&copy; 2026 EventifyAhmedabad. All rights reserved. | Privacy Policy | Terms & Conditions</p>
+            <p>&copy; 2026 Eventify. All rights reserved. | Privacy Policy | Terms & Conditions</p>
           </div>
         </div>
       </div>

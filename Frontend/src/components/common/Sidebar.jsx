@@ -1,9 +1,9 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { LayoutDashboard, Lock, Ticket, XCircle, LogOut, User, Heart } from 'lucide-react';
 
 export default function Sidebar() {
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
 
   const menuItems = [
     { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
@@ -13,16 +13,7 @@ export default function Sidebar() {
     { label: 'Wishlist', icon: Heart, path: '/dashboard?tab=wishlist' },
     // { label: 'Cancel Booking', icon: XCircle, path: '/dashboard?tab=cancel' },
   ];
-
-  const handleLogout = () => {
-    console.log('Logging out...');
-    localStorage.removeItem('userName');
-    localStorage.removeItem('bookings');
-    localStorage.removeItem('signupData');
-    localStorage.removeItem('AccessToken');
-    localStorage.removeItem('RefreshToken');
-    navigate('/');
-  };
+  
 
   return (
     <div className="hidden lg:block w-full sticky top-24 left-0 h-[calc(100vh-6rem)] p-6 space-y-4 bg-white rounded-2xl shadow overflow-auto z-20">
@@ -46,13 +37,13 @@ export default function Sidebar() {
       </div>
 
       {/* Logout Button */}
-      <button
+      {/* <button
         onClick={handleLogout}
         className="w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-red-100 text-red-700 hover:bg-red-200 transition-all font-bold mt-8"
       >
         <LogOut size={20} />
         <span>Logout</span>
-      </button>
+      </button> */}
     </div>
   );
 }
