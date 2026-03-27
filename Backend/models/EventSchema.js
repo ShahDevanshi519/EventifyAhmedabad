@@ -10,7 +10,6 @@ const EventTable = new mongoose.Schema({
     area:String,
     price:Number,
     totalseats:Number,
-    seats:Number,
     description:String,
     rating:Number,
     reviews:Number,
