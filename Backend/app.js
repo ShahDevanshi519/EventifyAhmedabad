@@ -6,6 +6,7 @@ const mongoose = require('mongoose');
 const fileupload = require('express-fileupload');
 const jwt = require('jsonwebtoken');
 const {v4:uuidv4} = require('uuid');
+const bcrypt = require('bcrypt');
 const port = process.env.PORT;
 
 // Import Module
@@ -34,6 +35,7 @@ const BookingTb = require('./models/BookingSchema');
 const FeedbackTb = require('./models/FeedbackSchema');
 const WishlistTb = require('./models/WishlistSchema');
 const verifyToken = require('./verifyToken');
+const TicektTypeTb = require('./models/TicketSchema');
 
 const MONGO_URL = process.env.MONGO_URL
 
@@ -71,8 +73,18 @@ app.post('/admin-login',(req,res) => {
 
 // Register
 app.post('/register-api',(req,res) => {
-    UserTb.create(req.body)
-    .then(() => res.json({flag:1,msg:"Record Added Successfully"}))
+    const {fullName,email,password,phone} = req.body;
+    bcrypt.hash(password,10)
+    .then((hashPassword) => {
+        const newuser = new UserTb({
+            fullName:fullName,
+            email:email,
+            password:hashPassword,
+            phone:phone
+        });
+
+        return newuser.save();
+    }).then(() => res.json({flag:1,msg:"Record Added Successfully"}))
     .catch(() => res.json({flag:0,msg:"Email Already Exists"}))
 })
 
@@ -83,37 +95,45 @@ app.get('/display-api',(req,res) => {
 })
 
 //Login Api
-app.post('/login-api',(req,res) => {
-    const email = req.body.email;
-    const password = req.body.password;
+app.post('/login-api', (req, res) => {
+    const { email, password } = req.body;
+
     const ACCESS_SECRET_KEY = process.env.JWT_SECRET;
     const REFRESH_SECRET_KEY = process.env.JWT_REFRESH_SECRET;
 
-    UserTb.findOne({email:email})
-    .then(data => {
-        if(data){
-            if(data.password == password){
-                const access_token = jwt.sign({
-                    id:data._id,email:data.email},
-                    ACCESS_SECRET_KEY,
-                    { expiresIn:"1h" }
-                )
-
-                const refresh_token = jwt.sign({
-                    id:data._id,email:data.email},
-                    REFRESH_SECRET_KEY,
-                    { expiresIn:"7d"}
-                )
-                res.json({flag:1,msg:'Login success',fullName:data.fullName,userId:data._id,access_token,refresh_token});
-            }else{
-                res.json({flag:0,msg:'Login faild'});
+    UserTb.findOne({ email: email })
+        .then((data) => {
+            if (!data) {
+                return res.json({ flag: 0, msg: 'No Account Found, SignUp First' });
             }
-        }else{
-            res.json({flag:0,msg:'No Account Is Found,SignUp First'});
-        }
-    })
-    .catch((err) => console.log(err))
-})
+
+            return bcrypt.compare(password, data.password)
+                .then((isMatch) => {
+                    if (!isMatch) {
+                        return res.json({ flag: 0, msg: 'Invalid Password' });
+                    }
+
+                    const access_token = jwt.sign(
+                        { id: data._id, email: data.email },
+                        ACCESS_SECRET_KEY,
+                        { expiresIn: "1h" }
+                    );
+
+                    const refresh_token = jwt.sign(
+                        { id: data._id, email: data.email },
+                        REFRESH_SECRET_KEY,
+                        { expiresIn: "7d" }
+                    );
+
+                    res.json({flag: 1,msg: 'Login Success',fullName: data.fullName,userId: data._id,access_token,refresh_token
+                    });
+                });
+        })
+        .catch((err) => {
+            console.log(err);
+            res.json({ flag: 0, msg: 'Something went wrong' });
+        });
+});
 
 // Dashboard API
 app.get('/dashboard',verifyToken,(req,res) => {
@@ -146,27 +166,39 @@ app.post('/refreshToken',(req,res) => {
 })
 
 // ChangePassword
-app.post('/changepassword',verifyToken,(req,res) => {
-    const oldpassword = req.body.oldpassword;
-    const newpassword = req.body.newpassword;
+app.post('/changepassword', verifyToken, (req, res) => {
+    const { oldpassword, newpassword } = req.body;
 
     UserTb.findById(req.user.id)
-    .then((user) => {
-        if(!user){
-            return res.status(401).json({msg:"User Not Found"})
-        }
+        .then((user) => {
+            if (!user) {
+                return res.status(401).json({ msg: "User Not Found" });
+            }
 
-        if(user.password !== oldpassword){
-            return res.status(401).json({msg:"Password Not Matched"});
-        }
+            return bcrypt.compare(oldpassword, user.password)
+                .then((isMatch) => {
+                    if (!isMatch) {
+                        return res.status(401).json({ msg: "Old Password Not Matched" });
+                    }
 
-        user.password = newpassword;
+                    return bcrypt.hash(newpassword, 10);
+                })
+                .then((hashedPassword) => {
+                    if (!hashedPassword) return;
 
-        user.save()
-        .then(() => res.json({flag:1,msg:"Password Update Successfully"}))
-        .catch(() => res.json({flag:0,msg:"Password Not Updated"}))
-    }).catch((err) => console.log(err))
-})
+                    user.password = hashedPassword;
+
+                    return user.save();
+                })
+                .then(() => {
+                    res.json({ flag: 1, msg: "Password Updated Successfully" });
+                });
+        })
+        .catch((err) => {
+            console.log(err);
+            res.status(500).json({ flag: 0, msg: "Something went wrong" });
+        });
+});
 
 // Edit Profile Fetch Data
 app.get('/editprofile/fetchdata',verifyToken,(req,res) => {
@@ -176,26 +208,33 @@ app.get('/editprofile/fetchdata',verifyToken,(req,res) => {
 })
 
 // Edit Profile
-app.post('/editprofile',verifyToken,(req,res) => {
-    const {fullName,lastName,email,phone,address,city,zip} = req.body;
-    const updateData = {fullName,lastName,email,phone,address,city,zip};
+app.post('/editprofile', verifyToken, (req, res) => {
+    const { fullName, lastName, email, phone, address, city, zip } = req.body;
 
-    if(req.files && req.files.profileImage){
+    let updateData = { fullName, lastName, email, phone, address, city, zip };
+
+    if (req.files && req.files.profileImage) {
         const image = req.files.profileImage;
-        const imageName = image.name;
+        const imageName = Date.now() + "_" + image.name;
         const uploadPath = "public/images/Uploads/" + imageName;
-        image.mv(uploadPath,(err) => {
-            if(err)
-                return res.status(500).json({msg:"Profile Image Is Not Uploaded"});
-        })
 
-        updateData.profileImage =  imageName;
+        image.mv(uploadPath, (err) => {
+            if (err) {
+                return res.status(500).json({ msg: "Image upload failed" });
+            }
+
+            updateData.profileImage = imageName;
+
+            UserTb.findByIdAndUpdate(req.user.id, updateData, { new: true })
+                .then(() => res.json({ flag: 1, msg: "Profile Updated Successfully" }))
+                .catch(() => res.json({ flag: 0, msg: "Update Failed" }));
+        });
+    } else {
+        UserTb.findByIdAndUpdate(req.user.id, updateData, { new: true })
+            .then(() => res.json({ flag: 1, msg: "Profile Updated Successfully" }))
+            .catch(() => res.json({ flag: 0, msg: "Update Failed" }));
     }
-
-    UserTb.findByIdAndUpdate(req.user.id,updateData,{new:true})
-    .then(() => res.json({flag:1,msg:"Your Profile Updated Successfully"}))
-    .catch((err) => res.json({flag:0,msg:"Your Profile Not Updated Successfully",error:err}))
-})
+});
 
 // ForgotPassword
 app.post('/forgotpassword',(req,res) => {
@@ -266,14 +305,19 @@ app.post('/resetpassword/:token',(req,res) => {
         if(!user)
             return res.json({msg:"Your Token Is Expired!Again Do ForgotPassword"})
 
-        user.password = newpassword;
-        user.resetToken = undefined;
-        user.resetTokenExpire = undefined;
+        return bcrypt.hash(newpassword,10)
+        .then((hashPassword) => {
+            user.password = hashPassword;
+            user.resetToken = undefined;
+            user.resetTokenExpire = undefined;
 
-        user.save()
-        .then(() => res.json({flag:1,msg:"Your Password Reset Successfully"}))
-        .catch(() => res.json({flag:0,msg:"Your Password Not Reset..."}))
-    }).catch((err) => console.log(err))
+            return user.save()
+        })
+    }).then(() => res.json({flag:1,msg:"Your Password Is Reset Successfully!"}))
+    .catch((err) => {
+        console.log(err)
+        res.json({flag:0,msg:"Your Password Is Not Reset..."})
+    })
 })
 
 // Feedback-Rating For Particular Event
@@ -405,7 +449,6 @@ app.post('/event-api', (req, res) => {
         area: req.body.area,
         price: req.body.price,
         totalseats: req.body.totalseats,
-        seats: req.body.seats,
         description: req.body.description,
         rating: req.body.rating,
         reviews: req.body.reviews,
@@ -603,10 +646,27 @@ app.get("/event/category/:category",(req,res) => {
     .catch((err) => res.json({msg:err.message}))
 })
 
+// Ticekt Type Fetch From Database and display In UI
+
+app.get('/ticketTypes/:eventId', (req, res) => {
+
+    const eventObjectId = new mongoose.Types.ObjectId(req.params.eventId);
+
+    TicektTypeTb.find({ eventId: eventObjectId })
+    .then((tickets) => {
+        console.log("Found tickets:", tickets);
+        res.json({ flag: 1, data: tickets });
+    })
+    .catch((err) => {
+        res.json({ flag: 0, msg: err.message });
+    });
+
+});
+
 // Booking API
 app.post('/booking', verifyToken, (req, res) => {
 
-    const { eventId, numberOfTickets, totalAmount } = req.body;
+    const { eventId, numberOfTickets, totalAmount, ticketTypes } = req.body;
 
     const nodemailer = require("nodemailer");
     const transporter = nodemailer.createTransport({
@@ -626,15 +686,33 @@ app.post('/booking', verifyToken, (req, res) => {
     .then((existingBooking) => {
 
         if (existingBooking) {
-            return res.json({
-                flag: 0,
-                msg: "You Already Did The Booking! Please Check Your Booking!"
-            });
+            throw { isCustom: true, msg: "You Already Did The Booking! Please Check Your Booking!" };
         }
+
+        return TicektTypeTb.findOneAndUpdate(
+            { eventId, type: ticketTypes[0].type },
+            { $inc: { availableSeats: -ticketTypes[0].quantity } }
+        );
+
+    })
+    .then((updatedTicket) => {
+
+        if (!updatedTicket) return;
+
+        if (ticketTypes[1]) {
+            return TicektTypeTb.findOneAndUpdate(
+                { eventId, type: ticketTypes[1].type },
+                { $inc: { availableSeats: -ticketTypes[1].quantity } }
+            );
+        }
+
+    })
+    .then(() => {
 
         return BookingTb.create({
             userId: req.user.id,
             eventId: eventId,
+            ticketTypes: ticketTypes,
             numberOfTickets: numberOfTickets,
             totalAmount: totalAmount
         });
@@ -647,8 +725,18 @@ app.post('/booking', verifyToken, (req, res) => {
         return BookingTb.findById(bookingData._id)
             .populate("userId", "fullName email")
             .populate("eventId", "title");
+
     })
     .then((bookingData) => {
+
+        if (!bookingData) return;
+
+        const ticketRows = ticketTypes.map((t) => `
+            <tr>
+                <td>${t.type} Tickets</td>
+                <td>${t.quantity} × ₹${t.pricePerTicket} = ₹${t.quantity * t.pricePerTicket}</td>
+            </tr>
+        `).join('');
 
         return transporter.sendMail({
             from: `"Eventify" <${process.env.EMAIL_USER}>`,
@@ -657,38 +745,15 @@ app.post('/booking', verifyToken, (req, res) => {
             html: `
                 <h2>New Booking Alert</h2>
                 <table border="1" cellpadding="10" cellspacing="0" style="border-collapse:collapse;">
-                    <tr>
-                        <th>Field</th>
-                        <th>Details</th>
-                    </tr>
-                    <tr>
-                        <td>User Name</td>
-                        <td>${bookingData.userId.fullName}</td>
-                    </tr>
-                    <tr>
-                        <td>User Email</td>
-                        <td>${bookingData.userId.email}</td>
-                    </tr>
-                    <tr>
-                        <td>Event</td>
-                        <td>${bookingData.eventId.title}</td>
-                    </tr>
-                    <tr>
-                        <td>Tickets</td>
-                        <td>${bookingData.numberOfTickets}</td>
-                    </tr>
-                    <tr>
-                        <td>Price</td>
-                        <td>₹${bookingData.totalAmount}</td>
-                    </tr>
-                    <tr>
-                        <td>Booking Status</td>
-                        <td>${bookingData.bookingStatus}</td>
-                    </tr>
-                    <tr>
-                        <td>Booking Date</td>
-                        <td>${bookingData.bookingDate}</td>
-                    </tr>
+                    <tr><th>Field</th><th>Details</th></tr>
+                    <tr><td>User Name</td><td>${bookingData.userId.fullName}</td></tr>
+                    <tr><td>User Email</td><td>${bookingData.userId.email}</td></tr>
+                    <tr><td>Event</td><td>${bookingData.eventId.title}</td></tr>
+                    ${ticketRows}
+                    <tr><td>Total Tickets</td><td>${bookingData.numberOfTickets}</td></tr>
+                    <tr><td>Total Price</td><td>₹${bookingData.totalAmount}</td></tr>
+                    <tr><td>Booking Status</td><td>${bookingData.bookingStatus}</td></tr>
+                    <tr><td>Booking Date</td><td>${bookingData.bookingDate}</td></tr>
                 </table>
             `
         })
@@ -700,40 +765,21 @@ app.post('/booking', verifyToken, (req, res) => {
                 html: `
                     <h2 style="color:green;">Booking Confirmed</h2>
                     <table border="1" cellpadding="10" cellspacing="0" style="border-collapse:collapse;">
-                        <tr>
-                            <th>Field</th>
-                            <th>Details</th>
-                        </tr>
-                        <tr>
-                            <td>Name</td>
-                            <td>${bookingData.userId.fullName}</td>
-                        </tr>
-                        <tr>
-                            <td>Event</td>
-                            <td>${bookingData.eventId.title}</td>
-                        </tr>
-                        <tr>
-                        <td>Tickets</td>
-                        <td>${bookingData.numberOfTickets}</td>
-                    </tr>
-                    <tr>
-                        <td>Price</td>
-                        <td>₹${bookingData.totalAmount}</td>
-                    </tr>
-                    <tr>
-                        <td>Booking Status</td>
-                        <td>${bookingData.bookingStatus}</td>
-                    </tr>
-                    <tr>
-                        <td>Booking Date</td>
-                        <td>${bookingData.bookingDate}</td>
-                    </tr>
+                        <tr><th>Field</th><th>Details</th></tr>
+                        <tr><td>Name</td><td>${bookingData.userId.fullName}</td></tr>
+                        <tr><td>Event</td><td>${bookingData.eventId.title}</td></tr>
+                        ${ticketRows}
+                        <tr><td>Total Tickets</td><td>${bookingData.numberOfTickets}</td></tr>
+                        <tr><td>Total Price</td><td>₹${bookingData.totalAmount}</td></tr>
+                        <tr><td>Booking Status</td><td>${bookingData.bookingStatus}</td></tr>
+                        <tr><td>Booking Date</td><td>${bookingData.bookingDate}</td></tr>
                     </table>
                     <br/>
                     <p>Thank You For Booking With Eventify</p>
                 `
             });
         });
+
     })
     .then(() => {
         res.json({
@@ -743,13 +789,15 @@ app.post('/booking', verifyToken, (req, res) => {
     })
     .catch((err) => {
         console.log(err);
+        if (err.isCustom) {
+            return res.json({ flag: 0, msg: err.msg });
+        }
         res.json({
             flag: 0,
             msg: "Booking or Email Failed",
             error: err.message
         });
     });
-
 });
 
 app.get('/booking/display',verifyToken,(req,res) => {
@@ -763,7 +811,8 @@ app.get('/ticketdisplay/:id',(req,res) => {
     BookingTb.findById(req.params.id)
     .populate("userId","fullName")
     .populate("eventId","title date time venue area eventImage category")
-    .then((data) => res.json(data))
+    .then((data) => {
+        res.json(data)})
     .catch((err) => res.json(err))
 })
 
@@ -836,6 +885,43 @@ app.delete('/admin/deleteEvent/:id',(req,res) => {
     .then(() => res.json({flag:1,msg:"Event Deleted Successfully!"}))
     .catch(() => res.json({flag:0,msg:"Event Not Deleted Successfully"}))
 })
+
+// Admin Update Event
+app.get('/admin/eventdisplay/:id',(req,res) => {
+    EventTb.findById(req.params.id)
+    .then((data) => res.json(data))
+    .catch((err) => console.log(err))
+})
+
+app.put('/admin/updatevent/:id', (req, res) => {
+
+  let updateData = { ...req.body };
+
+  if (!req.body.eventImage || req.body.eventImage === "") {
+    delete updateData.eventImage;
+  }
+
+  EventTb.findByIdAndUpdate(
+    req.params.id,
+    { $set: updateData },
+    { new: true }
+  )
+  .then((data) => {
+    res.json({
+      flag: 1,
+      msg: "Record Updated Successfully",
+      data: data
+    });
+  })
+  .catch((err) => {
+    console.log(err);
+    res.json({
+      flag: 0,
+      msg: "Record Is Not Updated Successfully!"
+    });
+  });
+
+});
 
 // Contact Status Update
 app.put('/admin/contact/status/:id',(req,res) => {
@@ -994,6 +1080,62 @@ app.post('/adminresetpassword/:token',(req,res) => {
         .then(() => res.json({flag:1,msg:"Your Password Reset Successfully"}))
         .catch(() => res.json({flag:0,msg:"Your Password Not Reset..."}))
     }).catch((err) => console.log(err))
+})
+
+// Ticket Type
+app.get('/fetch/event/title',(req,res) => {
+    EventTb.find({},"title")
+    .then((data) => res.json(data))
+    .catch((err) => res.json(err))
+})
+
+app.post("/admin/tickets", (req, res) => {
+  const { eventId, type, price, availableSeats } = req.body;
+
+  let eventData;
+
+  EventTb.findById(eventId)
+    .then((event) => {
+      if (!event) throw new Error("Event not found");
+      eventData = event;
+
+      return TicektTypeTb.find({ eventId });
+    })
+    .then((tickets) => {
+      const totalSeatsUsed = tickets.reduce(
+        (sum, t) => sum + t.availableSeats,
+        0
+      );
+
+      if (totalSeatsUsed + Number(availableSeats) > eventData.totalseats) {
+        return res.json({
+          message: "Seats exceed total event capacity",
+        });
+      }
+
+      return TicektTypeTb.create({ eventId, type, price, availableSeats });
+    })
+    .then((newTicket) => {
+      if (newTicket) res.json({flag:1,msg:"Ticket Addedd Successfully!"});
+    })
+    .catch((err) => {
+      res.json({ message: err.message });
+    });
+});
+
+// fetch ticekt details admin side
+app.get('/admin/ticket/display',(req,res) => {
+    TicektTypeTb.find()
+    .populate("eventId")
+    .then((data) => res.json(data))
+    .catch((err) => res.json(err))
+})
+
+// Ticekt Delete By Admin
+app.delete('/tickettype/delete/:id',(req,res) => {
+    TicektTypeTb.findByIdAndDelete(req.params.id)
+    .then(() => res.json({flag:1,msg:"Your Ticekt Deleted Successfully!"}))
+    .catch(() => res.json({flag:0,msg:"Your Ticekt Is Not Deleted Successfully!"}))
 })
 
 app.get('/',(req,res) => {
