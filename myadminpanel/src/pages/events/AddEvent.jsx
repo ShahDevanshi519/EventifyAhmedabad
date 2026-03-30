@@ -196,24 +196,24 @@ export default function AddEvent() {
           <div>
             <select name="area" onChange={(e) => {setEvent({...event,area:e.target.value}); setErrors({...errors,area:""})}} className="w-full bg-white border border-gray-200 p-4 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-400 transition placeholder-gray-400">
               <option value="">---Select Area---</option>
-              <option value="Navrangpura">AshramRoad</option>
-              <option value="Sarkhej">Bapunagar</option>
-              <option value="Maninagar">Bodakdev</option>
-              <option value="Satelite">Bopal</option>
-              <option value="Bopal">Chandkheda</option>
-              <option value="Thltej">Gota</option>
-              <option value="Vastrapur">Law Garden</option>
-              <option value="Gota">Maninagar</option>
-              <option value="Prahladnagar">Naroda</option>
-              <option value="SG Highway">Navrangpura</option>
-              <option value="Chandkheda">Nikol</option>
-              <option value="Chandkheda">Prahladnagar</option>
-              <option value="Chandkheda">SBR</option>
-              <option value="Chandkheda">SG Highway</option>
-              <option value="Chandkheda">Satelite</option>
-              <option value="Chandkheda">Thaltej</option>
-              <option value="Chandkheda">University</option>
-              <option value="Chandkheda">Vastrapur</option>
+              <option value="AshramRoad">AshramRoad</option>
+              <option value="Bapunagar">Bapunagar</option>
+              <option value="Bodakdev">Bodakdev</option>
+              <option value="Bopal">Bopal</option>
+              <option value="Chandkheda">Chandkheda</option>
+              <option value="Gota">Gota</option>
+              <option value="Law Garden">Law Garden</option>
+              <option value="Maninagar">Maninagar</option>
+              <option value="Naroda">Naroda</option>
+              <option value="Navrangpura">Navrangpura</option>
+              <option value="Nikol">Nikol</option>
+              <option value="Prahladnagar">Prahladnagar</option>
+              <option value="SBR">SBR</option>
+              <option value="SG Highway">SG Highway</option>
+              <option value="Satelite">Satelite</option>
+              <option value="Thaltej">Thaltej</option>
+              <option value="University">University</option>
+              <option value="Vastrapur">Vastrapur</option>
             </select>
             {errors.area && <p className="text-red-500 text-sm mt-1 ml-1">{errors.area}</p>}
           </div>
