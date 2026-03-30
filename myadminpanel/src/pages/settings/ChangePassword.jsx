@@ -16,39 +16,78 @@ export default function ChangePassword() {
     confirmPassword: ""
   });
 
+  const [errors, setErrors] = useState({
+    oldPassword: "",
+    newPassword: "",
+    confirmPassword: ""
+  });
+
+  const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
   const handleChange = (e) => {
     setPasswordData({
       ...passwordData,
       [e.target.name]: e.target.value
     });
+    // Clear error for the field being typed in
+    setErrors({
+      ...errors,
+      [e.target.name]: ""
+    });
+  };
+
+  const validate = () => {
+    const newErrors = { oldPassword: "", newPassword: "", confirmPassword: "" };
+    let isValid = true;
+
+    if (!passwordData.oldPassword.trim()) {
+      newErrors.oldPassword = "Old password is required.";
+      isValid = false;
+    }
+
+    if (!passwordData.newPassword.trim()) {
+      newErrors.newPassword = "New password is required.";
+      isValid = false;
+    } else if (!strongPasswordRegex.test(passwordData.newPassword)) {
+      newErrors.newPassword = "Min 8 chars, include uppercase, lowercase, number & special character.";
+      isValid = false;
+    }
+
+    if (!passwordData.confirmPassword.trim()) {
+      newErrors.confirmPassword = "Please confirm your new password.";
+      isValid = false;
+    } else if (passwordData.newPassword !== passwordData.confirmPassword) {
+      newErrors.confirmPassword = "New password and confirm password do not match.";
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+    return isValid;
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
 
-   const id = localStorage.getItem("AdminId");
+    if (!validate()) return;
 
-   if(!id){
-    navigate('/login');
-    return;
-   }
+    const id = localStorage.getItem("AdminId");
 
-   if(passwordData.newPassword !== passwordData.confirmPassword){
-    alert("New Password And Confirm Password Not Match!");
-    return;
-   }
-
-   axios.post(`http://127.0.0.1:3000/admin/changepassword/${id}`,{
-    oldpassword:passwordData.oldPassword,
-    newpassword:passwordData.newPassword
-   }).then((res) => {
-    if(res.data.flag === 1){
-      alert(res.data.msg);
-      navigate('/admin/dashboard');
-    }else{
-      alert(res.data.msg);
+    if (!id) {
+      navigate('/login');
+      return;
     }
-   }).catch((err) => console.log(err))
+
+    axios.post(`http://127.0.0.1:3000/admin/changepassword/${id}`, {
+      oldpassword: passwordData.oldPassword,
+      newpassword: passwordData.newPassword
+    }).then((res) => {
+      if (res.data.flag === 1) {
+        alert(res.data.msg);
+        navigate('/admin/dashboard');
+      } else {
+        alert(res.data.msg);
+      }
+    }).catch((err) => console.log(err));
   };
 
   return (
@@ -66,60 +105,69 @@ export default function ChangePassword() {
         <form onSubmit={handleSubmit} className="space-y-6">
 
           {/* Old Password */}
-          <div className="relative">
-            <Lock className="absolute left-3 top-3 text-purple-500" size={18} />
-            <input
-              type={showOld ? "text" : "password"}
-              name="oldPassword"
-              placeholder="Old Password"
-              value={passwordData.oldPassword}
-              onChange={handleChange}
-              className="w-full pl-10 pr-10 py-3 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-purple-400 transition shadow-sm"
-            />
-            <div
-              className="absolute right-3 top-3 cursor-pointer text-gray-500"
-              onClick={() => setShowOld(!showOld)}
-            >
-              {showOld ? <EyeOff size={18} /> : <Eye size={18} />}
+          <div>
+            <div className="relative">
+              <Lock className="absolute left-3 top-3 text-purple-500" size={18} />
+              <input
+                type={showOld ? "text" : "password"}
+                name="oldPassword"
+                placeholder="Old Password"
+                value={passwordData.oldPassword}
+                onChange={handleChange}
+                className="w-full pl-10 pr-10 py-3 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-purple-400 transition shadow-sm"
+              />
+              <div
+                className="absolute right-3 top-3 cursor-pointer text-gray-500"
+                onClick={() => setShowOld(!showOld)}
+              >
+                {showOld ? <EyeOff size={18} /> : <Eye size={18} />}
+              </div>
             </div>
+            {errors.oldPassword && <p className="text-red-500 text-sm mt-1 ml-1">{errors.oldPassword}</p>}
           </div>
 
           {/* New Password */}
-          <div className="relative">
-            <Lock className="absolute left-3 top-3 text-purple-500" size={18} />
-            <input
-              type={showNew ? "text" : "password"}
-              name="newPassword"
-              placeholder="New Password"
-              value={passwordData.newPassword}
-              onChange={handleChange}
-              className="w-full pl-10 pr-10 py-3 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-pink-400 transition shadow-sm"
-            />
-            <div
-              className="absolute right-3 top-3 cursor-pointer text-gray-500"
-              onClick={() => setShowNew(!showNew)}
-            >
-              {showNew ? <EyeOff size={18} /> : <Eye size={18} />}
+          <div>
+            <div className="relative">
+              <Lock className="absolute left-3 top-3 text-purple-500" size={18} />
+              <input
+                type={showNew ? "text" : "password"}
+                name="newPassword"
+                placeholder="New Password"
+                value={passwordData.newPassword}
+                onChange={handleChange}
+                className="w-full pl-10 pr-10 py-3 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-pink-400 transition shadow-sm"
+              />
+              <div
+                className="absolute right-3 top-3 cursor-pointer text-gray-500"
+                onClick={() => setShowNew(!showNew)}
+              >
+                {showNew ? <EyeOff size={18} /> : <Eye size={18} />}
+              </div>
             </div>
+            {errors.newPassword && <p className="text-red-500 text-sm mt-1 ml-1">{errors.newPassword}</p>}
           </div>
 
           {/* Confirm Password */}
-          <div className="relative">
-            <Lock className="absolute left-3 top-3 text-purple-500" size={18} />
-            <input
-              type={showConfirm ? "text" : "password"}
-              name="confirmPassword"
-              placeholder="Confirm Password"
-              value={passwordData.confirmPassword}
-              onChange={handleChange}
-              className="w-full pl-10 pr-10 py-3 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-pink-400 transition shadow-sm"
-            />
-            <div
-              className="absolute right-3 top-3 cursor-pointer text-gray-500"
-              onClick={() => setShowConfirm(!showConfirm)}
-            >
-              {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
+          <div>
+            <div className="relative">
+              <Lock className="absolute left-3 top-3 text-purple-500" size={18} />
+              <input
+                type={showConfirm ? "text" : "password"}
+                name="confirmPassword"
+                placeholder="Confirm Password"
+                value={passwordData.confirmPassword}
+                onChange={handleChange}
+                className="w-full pl-10 pr-10 py-3 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-pink-400 transition shadow-sm"
+              />
+              <div
+                className="absolute right-3 top-3 cursor-pointer text-gray-500"
+                onClick={() => setShowConfirm(!showConfirm)}
+              >
+                {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
+              </div>
             </div>
+            {errors.confirmPassword && <p className="text-red-500 text-sm mt-1 ml-1">{errors.confirmPassword}</p>}
           </div>
 
           {/* Button */}
