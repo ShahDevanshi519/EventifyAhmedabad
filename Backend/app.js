@@ -52,41 +52,100 @@ app.get('/admin-api',(req,res) => {
     .catch((err) => console.log("Data Not Found"))
 })
 
+// Admin Bcrypt Password
+bcrypt.hash("admin@123", 10)
+  .then((hash) => {
+    console.log(hash);
+  })
+  .catch((err) => console.log(err));
+
 // Admin Login
-app.post('/admin-login',(req,res) => {
+app.post('/admin-login', (req, res) => {
     const email = req.body.email;
     const password = req.body.password;
-    AdminTb.findOne({email:email})
+
+    AdminTb.findOne({ email: email })
     .then((data) => {
-        if(data){
-            if(data.password == password){
-                res.json({flag:1,msg:"Login Successfully",adminId:data._id})
-            }else{
-                res.json({flag:0,msg:"Login Failed"})
-            }
-        }else{
-            res.json({flag:0,msg:"Invalid Admin Credential"})
+
+        if (!data) {
+            return res.json({ flag: 0, msg: "Invalid Admin Credential" });
         }
+
+        bcrypt.compare(password, data.password)
+        .then((result) => {
+
+            if (result) {
+                res.json({
+                    flag: 1,
+                    msg: "Login Successfully",
+                    adminId: data._id
+                });
+            } else {
+                res.json({ flag: 0, msg: "Login Failed" });
+            }
+
+        })
+        .catch((err) => {
+            console.log(err);
+            res.json({ flag: 0, msg: "Error in password compare" });
+        });
     })
-    .catch((err) => res.json(err.message))
-})
+    .catch((err) => res.json({ flag: 0, msg: err.message }));
+});
 
 // Register
-app.post('/register-api',(req,res) => {
-    const {fullName,email,password,phone} = req.body;
-    bcrypt.hash(password,10)
-    .then((hashPassword) => {
-        const newuser = new UserTb({
-            fullName:fullName,
-            email:email,
-            password:hashPassword,
-            phone:phone
-        });
+app.post('/register-api', (req, res) => {
+    const { fullName, email, password, phone } = req.body;
 
-        return newuser.save();
-    }).then(() => res.json({flag:1,msg:"Record Added Successfully"}))
-    .catch(() => res.json({flag:0,msg:"Email Already Exists"}))
-})
+    bcrypt.hash(password, 10)
+        .then(hashPassword => {
+            const newUser = new UserTb({
+                fullName,
+                email,
+                password: hashPassword,
+                phone
+            });
+
+            return newUser.save();
+        })
+        .then((user) => {
+            const nodemailer = require("nodemailer");
+            const transporter = nodemailer.createTransport({
+                host: "smtp.gmail.com",
+                port: 587,
+                secure: false,
+                auth: {
+                    user: process.env.EMAIL_USER,
+                    pass: process.env.EMAIL_PASS
+                }
+            });
+
+            return transporter.sendMail({
+                from: `"Eventify" <${process.env.EMAIL_USER}>`,
+                to: user.email,
+                subject: "Welcome to Eventify!",
+                html: `
+                    <h2>Hi ${user.fullName},</h2>
+                    <p>Thank you so much for registering with <b>Eventify!</b></p>
+                    <p>Now you can explore events, book events, provide feedback & ratings, and enjoy all the features!</p>
+                    <br>
+                    <p>Best Regards,<br>Eventify Team</p>
+                `
+            });
+        })
+        .then((info) => {
+            console.log("Email Info:", info);
+            res.json({ flag: 1, msg: "Record Added Successfully & Email Sent" });
+        })
+        .catch(err => {
+            console.log(err);
+            if (err.code === 11000) {
+                res.json({ flag: 0, msg: "Email Already Exists" });
+            } else {
+                res.json({ flag: 1, msg: "Record Added Successfully, but email failed to send" });
+            }
+        });
+});
 
 app.get('/display-api',(req,res) => {
     UserTb.find()
@@ -697,7 +756,9 @@ app.post('/booking', verifyToken, (req, res) => {
     })
     .then((updatedTicket) => {
 
-        if (!updatedTicket) return;
+        if (!updatedTicket) {
+            throw { isCustom: true, msg: "Ticket not available" };
+        }
 
         if (ticketTypes[1]) {
             return TicektTypeTb.findOneAndUpdate(
@@ -706,6 +767,7 @@ app.post('/booking', verifyToken, (req, res) => {
             );
         }
 
+        return true;
     })
     .then(() => {
 
@@ -720,7 +782,9 @@ app.post('/booking', verifyToken, (req, res) => {
     })
     .then((bookingData) => {
 
-        if (!bookingData) return;
+        if (!bookingData) {
+            throw { isCustom: true, msg: "Booking failed" };
+        }
 
         return BookingTb.findById(bookingData._id)
             .populate("userId", "fullName email")
@@ -729,7 +793,9 @@ app.post('/booking', verifyToken, (req, res) => {
     })
     .then((bookingData) => {
 
-        if (!bookingData) return;
+        if (!bookingData) {
+            throw { isCustom: true, msg: "Booking data not found" };
+        }
 
         const ticketRows = ticketTypes.map((t) => `
             <tr>
@@ -782,17 +848,21 @@ app.post('/booking', verifyToken, (req, res) => {
 
     })
     .then(() => {
-        res.json({
+        return res.json({
             flag: 1,
             msg: "Booking Successful & Emails Sent"
         });
     })
     .catch((err) => {
         console.log(err);
+
+        if (res.headersSent) return;
+
         if (err.isCustom) {
             return res.json({ flag: 0, msg: err.msg });
         }
-        res.json({
+
+        return res.json({
             flag: 0,
             msg: "Booking or Email Failed",
             error: err.message
@@ -933,27 +1003,40 @@ app.put('/admin/contact/status/:id',(req,res) => {
     .catch((err) => console.log(err))
 })
 
-// Admin ChangePassword
-app.post('/admin/changepassword/:id',(req,res) => {
+// Admin Change Password
+app.post('/admin/changepassword/:id', (req, res) => {
     const oldpassword = req.body.oldpassword;
     const newpassword = req.body.newpassword;
 
     AdminTb.findById(req.params.id)
     .then((user) => {
-        if(!user){
-            return res.json({msg:"User Not Found"})
+        if (!user) {
+            return res.json({ flag: 0, msg: "User Not Found" });
         }
 
-        if(user.password !== oldpassword){
-            return res.json({msg:"passsword doesn't match! enter valid password."})
-        }
+        
+        return bcrypt.compare(oldpassword, user.password)
+        .then((isMatch) => {
+            if (!isMatch) {
+                return res.json({ flag: 0, msg: "Old password doesn't match! Enter valid password." });
+            }
 
-        user.password = newpassword;
-        user.save()
-        .then(() => res.json({flag:1,msg:"password updated successfully!"}))
-        .catch(() => res.json({flag:0,msg:"password not updated successfully"}))
-    }).catch((err) => console.log(err))
-})
+            
+            return bcrypt.hash(newpassword, 10)
+                .then((hashedPassword) => {
+                    user.password = hashedPassword;
+
+                    return user.save()
+                        .then(() => res.json({ flag: 1, msg: "Password updated successfully!" }))
+                        .catch(() => res.json({ flag: 0, msg: "Password not updated successfully" }));
+                });
+        });
+    })
+    .catch((err) => {
+        console.log(err);
+        res.json({ flag: 0, msg: "Something went wrong" });
+    });
+});
 
 // Admin Edit Profile
 app.get("/admin/display/:id",(req,res) => {
@@ -1006,7 +1089,7 @@ app.post('/admin/forgotpassword',(req,res) => {
     .then((user) => {
 
         if(!user){
-            return res.json({msg:"User Not Exist"});
+            throw { isCustom:true, msg:"User Not Exist" };
         }
 
         const token = uuidv4();
@@ -1018,7 +1101,7 @@ app.post('/admin/forgotpassword',(req,res) => {
     }).then((saveUser) => {
 
         if(!saveUser){
-            return res.json({msg:"User save failed"});
+            throw { isCustom:true, msg:"User save failed" };
         }
 
         const nodemailer = require("nodemailer");
@@ -1044,43 +1127,58 @@ app.post('/admin/forgotpassword',(req,res) => {
                 <h2>Reset Token Link</h2>
                 <p>Click the link below to reset password</p>
                 <a href="${resetLink}">Reset Password</a>
-                <p>this link will be expired in 15 minutes.</p>
+                <p>This link will expire in 15 minutes.</p>
             `
         });
 
     }).then(() => {
 
-        res.json({flag:1,msg:"Email Send Successfully"});
+        return res.json({flag:1,msg:"Email Send Successfully"});
 
     }).catch((err) => {
 
         console.log(err);
-        res.json({flag:0,msg:"Something Went Wrong!"});
 
+        if(res.headersSent) return;
+
+        if(err.isCustom){
+            return res.json({flag:0,msg:err.msg});
+        }
+
+        return res.json({flag:0,msg:"Something Went Wrong!"});
     });
 
 });
 
-app.post('/adminresetpassword/:token',(req,res) => {
+app.post('/adminresetpassword/:token', (req, res) => {
     const newpassword = req.body.newpassword;
     const token = req.params.token;
 
     AdminTb.findOne({
-        resetToken:token,
-        resetTokenExpire:{$gt:Date.now()}
-    }).then((user) => {
-        if(!user)
-            return res.json({msg:"Your Token Is Expired!Again Do ForgotPassword"})
+        resetToken: token,
+        resetTokenExpire: { $gt: Date.now() }
+    })
+    .then((user) => {
+        if (!user) {
+            return res.json({ flag: 0, msg: "Your Token Is Expired! Please do Forgot Password again." });
+        }
 
-        user.password = newpassword;
-        user.resetToken = undefined;
-        user.resetTokenExpire = undefined;
+        return bcrypt.hash(newpassword, 10)
+            .then((hashedPassword) => {
+                user.password = hashedPassword;
+                user.resetToken = undefined;
+                user.resetTokenExpire = undefined;
 
-        user.save()
-        .then(() => res.json({flag:1,msg:"Your Password Reset Successfully"}))
-        .catch(() => res.json({flag:0,msg:"Your Password Not Reset..."}))
-    }).catch((err) => console.log(err))
-})
+                return user.save()
+                    .then(() => res.json({ flag: 1, msg: "Your Password Reset Successfully" }))
+                    .catch(() => res.json({ flag: 0, msg: "Your Password Not Reset..." }));
+            });
+    })
+    .catch((err) => {
+        console.log(err);
+        res.json({ flag: 0, msg: "Something went wrong" });
+    });
+});
 
 // Ticket Type
 app.get('/fetch/event/title',(req,res) => {
@@ -1089,16 +1187,18 @@ app.get('/fetch/event/title',(req,res) => {
     .catch((err) => res.json(err))
 })
 
-app.post("/admin/tickets", (req, res) => {
+app.post('/admin/tickets', (req, res) => {
   const { eventId, type, price, availableSeats } = req.body;
 
   let eventData;
 
   EventTb.findById(eventId)
     .then((event) => {
-      if (!event) throw new Error("Event not found");
-      eventData = event;
+      if (!event) {
+        throw { isCustom: true, msg: "Event not found" };
+      }
 
+      eventData = event;
       return TicektTypeTb.find({ eventId });
     })
     .then((tickets) => {
@@ -1108,18 +1208,34 @@ app.post("/admin/tickets", (req, res) => {
       );
 
       if (totalSeatsUsed + Number(availableSeats) > eventData.totalseats) {
-        return res.json({
-          message: "Seats exceed total event capacity",
-        });
+        throw {
+          isCustom: true,
+          msg: "Seats exceed total event capacity",
+        };
       }
 
       return TicektTypeTb.create({ eventId, type, price, availableSeats });
     })
     .then((newTicket) => {
-      if (newTicket) res.json({flag:1,msg:"Ticket Addedd Successfully!"});
+      return res.json({
+        flag: 1,
+        msg: "Ticket Added Successfully!",
+        data: newTicket,
+      });
     })
     .catch((err) => {
-      res.json({ message: err.message });
+      console.log(err);
+
+      if (res.headersSent) return;
+
+      if (err.isCustom) {
+        return res.json({ flag: 0, msg: err.msg });
+      }
+
+      return res.json({
+        flag: 0,
+        msg: err.message || "Something went wrong",
+      });
     });
 });
 
