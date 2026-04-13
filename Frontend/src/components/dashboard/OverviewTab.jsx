@@ -95,7 +95,7 @@ export default function OverviewTab({ user, bookings }) {
         </div>
 
         {/* Total Spent */}
-        <div className="glass rounded-xl p-6">
+        {/* <div className="glass rounded-xl p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-gray-700 font-bold">Amount Spent</h3>
             <span className="text-2xl">💰</span>
@@ -104,10 +104,10 @@ export default function OverviewTab({ user, bookings }) {
             ₹{bookings?.reduce((sum, b) => sum + (b.totalAmount || 0), 0) || 0}
           </p>
           <p className="text-sm text-gray-500 mt-2">total spending</p>
-        </div>
+        </div> */}
 
         {/* Upcoming Events */}
-        <div className="glass rounded-xl p-6">
+        {/* <div className="glass rounded-xl p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-gray-700 font-bold">Upcoming Events</h3>
             <Calendar className="text-pink-500" size={24} />
@@ -116,7 +116,7 @@ export default function OverviewTab({ user, bookings }) {
             {bookings?.filter(b => new Date(b.date) > new Date()).length || 0}
           </p>
           <p className="text-sm text-gray-500 mt-2">events coming soon</p>
-        </div>
+        </div> */}
       </div>
 
       {/* Recent Bookings */}

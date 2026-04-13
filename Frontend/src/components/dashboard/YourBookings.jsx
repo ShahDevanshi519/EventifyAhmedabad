@@ -91,9 +91,9 @@ useEffect(() => {
                   {/* <button className="flex-1 sm:flex-none px-4 py-2 bg-blue-100 text-blue-700 rounded-lg font-bold hover:bg-blue-200 transition-colors">
                     Download
                   </button> */}
-                  <button className="flex-1 sm:flex-none px-4 py-2 bg-red-500 text-white rounded-lg font-bold hover:bg-red-600 transition-colors">
+                  {/* <button className="flex-1 sm:flex-none px-4 py-2 bg-red-500 text-white rounded-lg font-bold hover:bg-red-600 transition-colors">
                     Cancel Booking
-                  </button>
+                  </button> */}
 
                 </div>
               </div>
