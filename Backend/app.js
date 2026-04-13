@@ -1003,6 +1003,78 @@ app.put('/admin/contact/status/:id',(req,res) => {
     .catch((err) => console.log(err))
 })
 
+// Booking Cancel
+app.put('/booking/cancel/status/:id', (req, res) => {
+  const bookingStatus = req.body.bookingStatus;
+
+  BookingTb.findById(req.params.id)
+    .populate("userId")
+    .then((booking) => {
+
+      if (!booking) {
+        return res.json({ flag: 0, msg: "Booking not found!" });
+      }
+
+     
+      const oldStatus = booking.bookingStatus;
+      booking.bookingStatus = bookingStatus;
+      
+      return booking.save()
+      .then((updatedBooking) => {  
+        if (oldStatus !== "Cancel" && bookingStatus === "Cancel") { 
+
+          const nodemailer = require("nodemailer");
+
+          const transporter = nodemailer.createTransport({
+            service: "gmail",
+            auth: {
+              user: process.env.EMAIL_USER,
+              pass: process.env.EMAIL_PASS
+            }
+          });
+
+          const mailOptions = {
+            from: `"Eventify" <${process.env.EMAIL_USER}>`,
+            to: updatedBooking.userId.email,
+            subject: "Booking Cancelled",
+            html: `
+            <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+  
+            <p>Hello <strong>${updatedBooking.userId.fullName}</strong>,</p>
+
+            <p>We regret to inform you that your booking has been cancelled due to unforeseen circumstances related to the event.</p>
+            <p>We sincerely apologize for any inconvenience caused. Thank you for your understanding.</p>
+            <p>If you have any questions, please feel free to contact us.</p><br>
+            <p>
+                Regards,<br>
+                <strong>Eventify Team</strong>
+            </p>
+
+        </div>`
+          };
+
+          return transporter.sendMail(mailOptions)
+            .then(() => {
+              return res.json({ flag: 1, msg: "Booking Cancelled & Email Sent!" });
+            })
+            .catch((err) => {
+              console.log(err);
+              return res.json({ flag: 1, msg: "Booking Cancelled but Email Failed!" });
+            });
+
+        } else {
+          return res.json({ flag: 1, msg: "Status Updated!" });
+        }
+
+      });
+
+    })
+    .catch((err) => {
+      console.log(err);
+      return res.json({ flag: 0, msg: "Error occurred!" });
+    });
+});
+
 // Admin Change Password
 app.post('/admin/changepassword/:id', (req, res) => {
     const oldpassword = req.body.oldpassword;
@@ -1045,40 +1117,45 @@ app.get("/admin/display/:id",(req,res) => {
     .catch((err) => res.json(err))
 })
 
-app.post('/admin/editprofile/:id',(req,res) => {
+app.post('/admin/editprofile/:id', (req, res) => {
 
-    const {adminName,lastName,email,mobile,address,city,zip} = req.body;
+    const { adminName, lastName, email, mobile, address, city, zip } = req.body;
 
-    const allData = {adminName,lastName,email,mobile,address,city,zip};
+    const allData = { adminName, lastName, email, mobile, address, city, zip };
 
-    if(req.files && req.files.profileImage){
+    if (req.files && req.files.profileImage) {
 
         const image = req.files.profileImage;
-        const imagename = image.name;
+        const imagename = Date.now() + "_" + image.name;
+
         const uploadpath = 'public/Images/Admin/' + imagename;
 
-        image.mv(uploadpath,(err)=>{
-            if(err){
-                return res.json({flag:0,msg:"File Is Not Uploaded Successfully"})
+        image.mv(uploadpath, (err) => {
+            if (err) {
+                console.log(err);
+                return res.json({ flag: 0, msg: "File upload failed" });
             }
 
             allData.profileImage = imagename;
 
-            AdminTb.findByIdAndUpdate(req.params.id,allData,{returnDocument:"after"})
-            .then(()=>res.json({flag:1,msg:"Your Profile Updated Successfully!"}))
-            .catch(()=>res.json({flag:0,msg:"Your Profile Is Not Updated Successfully!"}))
+            AdminTb.findByIdAndUpdate(req.params.id, allData, { new: true })
+                .then(() => res.json({ flag: 1, msg: "Profile Updated Successfully!" }))
+                .catch((err) => {
+                    console.log(err);
+                    res.json({ flag: 0, msg: "Update failed" });
+                });
+        });
 
-        })
+    } else {
 
-    }else{
-
-        AdminTb.findByIdAndUpdate(req.params.id,allData,{returnDocument:"after"})
-        .then(()=>res.json({flag:1,msg:"Your Profile Updated Successfully!"}))
-        .catch(()=>res.json({flag:0,msg:"Your Profile Is Not Updated Successfully!"}))
-
+        AdminTb.findByIdAndUpdate(req.params.id, allData, { new: true })
+            .then(() => res.json({ flag: 1, msg: "Profile Updated Successfully!" }))
+            .catch((err) => {
+                console.log(err);
+                res.json({ flag: 0, msg: "Update failed" });
+            });
     }
-
-})
+});
 
 // Forgot Password
 app.post('/admin/forgotpassword',(req,res) => {
