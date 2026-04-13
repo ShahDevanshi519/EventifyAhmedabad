@@ -57,7 +57,7 @@ export default function EditProfile() {
     axios.get(`http://127.0.0.1:3000/admin/display/${id}`)
       .then((res) => {
         setProfileData(res.data);
-        setPreview("http://127.0.0.1:3000/images/Admin/" + res.data.profileImage);
+        setPreview("http://127.0.0.1:3000/Images/Admin/" + res.data.profileImage);
         console.log(res.data);
       })
       .catch((err) => console.log(err));
@@ -104,10 +104,10 @@ export default function EditProfile() {
     }
 
     // Zip Code
-    if (!profileData.zip.trim()) {
+    if (!profileData.zip) {
       newErrors.zip = "Zip code is required.";
       isValid = false;
-    } else if (!/^[0-9]{4,6}$/.test(profileData.zip.trim())) {
+    } else if (!/^[0-9]{4,6}$/.test(profileData.zip)) {
       newErrors.zip = "Zip code must be 4 to 6 digits.";
       isValid = false;
     }
@@ -154,9 +154,11 @@ export default function EditProfile() {
     formdata.append("address", profileData.address);
     formdata.append("city", profileData.city);
     formdata.append("zip", profileData.zip);
-    if (profileData.profileImage) {
-      formdata.append("profileImage", profileData.profileImage);
-    }
+    if (profileData.profileImage instanceof File) {
+    formdata.append("profileImage", profileData.profileImage);
+  } else {
+    formdata.append("existingImage", profileData.profileImage);
+  }
 
     axios.post(`http://127.0.0.1:3000/admin/editprofile/${id}`, formdata)
       .then((res) => {
