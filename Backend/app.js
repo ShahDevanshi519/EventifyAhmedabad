@@ -1014,7 +1014,6 @@ app.put('/booking/cancel/status/:id', (req, res) => {
       if (!booking) {
         return res.json({ flag: 0, msg: "Booking not found!" });
       }
-
      
       const oldStatus = booking.bookingStatus;
       booking.bookingStatus = bookingStatus;
