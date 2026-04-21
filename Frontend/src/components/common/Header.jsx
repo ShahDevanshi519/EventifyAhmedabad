@@ -1,16 +1,29 @@
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useRef } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { Search, MapPin, ChevronDown, Menu, X } from "lucide-react"
 import LocationModal from "./LocationModal"
+import axios from "axios"
 
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [showLocationModal, setShowLocationModal] = useState(false)
   const [selectedLocation, setSelectedLocation] = useState("Ahmedabad")
   const [showMobileMenu, setShowMobileMenu] = useState(false)
-
   const [userName, setUserName] = useState(localStorage.getItem("userName"))
-  const navigate = useNavigate();
+
+  const [events, setEvents] = useState([])
+  const [searchQuery, setSearchQuery] = useState("")
+  const [searchResults, setSearchResults] = useState([])
+  const [showDropdown, setShowDropdown] = useState(false)
+  const searchRef = useRef(null)
+
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    axios.get("http://localhost:3000/display-event")
+      .then(res => setEvents(res.data))
+      .catch(err => console.log("Header search fetch error:", err))
+  }, [])
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 50)
@@ -22,11 +35,36 @@ export default function Header() {
     checkUser()
 
     window.addEventListener("storage", checkUser)
+
+    const handleClickOutside = (e) => {
+      if (searchRef.current && !searchRef.current.contains(e.target))
+        setShowDropdown(false)
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+
     return () => {
       window.removeEventListener("scroll", handleScroll)
       window.removeEventListener("storage", checkUser)
+      document.removeEventListener("mousedown", handleClickOutside)
     }
   }, [])
+
+  useEffect(() => {
+    if (searchQuery.trim().length < 2) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setSearchResults([])
+      setShowDropdown(false)
+      return
+    }
+    const q = searchQuery.toLowerCase()
+    const filtered = events.filter(event =>
+      event.title?.toLowerCase().includes(q) ||
+      event.area?.toLowerCase().includes(q) ||
+      event.category?.toLowerCase().includes(q)
+    )
+    setSearchResults(filtered)
+    setShowDropdown(true)
+  }, [searchQuery, events])
 
   const handleLogout = () => {
     localStorage.removeItem("userName")
@@ -117,14 +155,43 @@ export default function Header() {
               </div>
 
               {/* Search */}
-              <div className="relative">
+              <div className="relative" ref={searchRef}>
                 <input
                   placeholder="Search..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === "Escape" && setShowDropdown(false)}
                   className={`px-4 py-2 rounded-full outline-none transition-all duration-300 ${
                     isScrolled ? "bg-white/20 text-white placeholder-white focus:bg-white/30" : "bg-purple-100 text-purple-800 focus:bg-purple-200"
                   }`}
                 />
                 <Search size={18} className={`absolute right-3 top-2.5 ${isScrolled ? "text-white" : "text-purple-600"}`} />
+
+                {/* Dropdown - only this is new */}
+                {showDropdown && (
+                  <div className="absolute top-full mt-2 left-0 w-72 bg-white rounded-xl shadow-2xl border border-gray-100 z-50 overflow-hidden">
+                    {searchResults.length > 0 ? (
+                      searchResults.slice(0, 6).map((event) => (
+                        <button
+                          key={event._id}
+                          onClick={() => {
+                            setSearchQuery("")
+                            setShowDropdown(false)
+                            navigate(`/event/${event._id}`)
+                          }}
+                          className="w-full flex items-center gap-3 px-4 py-3 hover:bg-purple-50 transition text-left border-b border-gray-50 last:border-0"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-purple-800 truncate text-sm">{event.title}</p>
+                            <p className="text-xs text-gray-400 truncate">{event.area} · {event.category}</p>
+                          </div>
+                        </button>
+                      ))
+                    ) : (
+                      <div className="px-4 py-3 text-sm text-gray-400 text-center">No events found</div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Account */}
@@ -149,7 +216,7 @@ export default function Header() {
                       </>
                     )}
                     <div className="my-1 border-t border-purple-200"></div>
-                    {/* RESTORED: Contact & About Options */}
+                    {/* Contact & About Options */}
                     <Link to="/contact" className="block px-4 py-2 hover:bg-purple-100 rounded text-purple-700 font-medium whitespace-nowrap transition-colors">
                       Contact
                     </Link>
