@@ -12,7 +12,7 @@ export default function App() {
   useEffect(() => {
     axios.get(`http://localhost:3000/ticketdisplay/${id}`)
       .then((res) => {
-        console.log(res.data); // ← verify ticketTypes is coming
+        console.log(res.data);
         setTicketData(res.data);
       })
       .catch((err) => console.log(err));
