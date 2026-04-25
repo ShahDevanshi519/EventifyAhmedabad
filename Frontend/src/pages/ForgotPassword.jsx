@@ -11,6 +11,11 @@ export default function ForgotPassword() {
   const handleSubmit = (e) => {
     e.preventDefault();
 
+     if (!email) {
+      alert('Please enter your email id');
+      return;
+    }
+
     axios.post("http://127.0.0.1:3000/forgotpassword",{email})
     .then((res) => {
       if(res.data.flag === 1){
