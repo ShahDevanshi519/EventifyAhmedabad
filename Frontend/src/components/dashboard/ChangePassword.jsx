@@ -51,7 +51,7 @@ export default function ChangePassword() {
     const errorMsg = validateField(name, value, updatedFormData);
     setError((prev) => ({ ...prev, [name]: errorMsg }));
 
-    // Re-validate confirmPassword when newPassword changes
+    //  confirmPassword when newPassword changes
     if (name === "newPassword" && updatedFormData.confirmPassword) {
       const confirmError = updatedFormData.confirmPassword !== value
         ? "Password And Confirm Password Must Be Same"
