@@ -22,11 +22,24 @@ export default function ResetPassword() {
   const handleResetPassword = (e) => {
     e.preventDefault();
 
-    if(formData.confirmpassword !== formData.newpassword){
-        alert("Password and Confirm Password Must Be Same!");
-        return;
+    const passwordregex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{6,}$/;
+
+    if (!formData.newpassword || !formData.confirmpassword) {
+      alert("Please fill in all fields");
+      return;
     }
 
+    if (!passwordregex.test(formData.newpassword)) {
+      alert("Password must be at least 6 characters and include a letter, number, and special character (@$!%*#?&)");
+      return;
+    }
+
+    if (formData.confirmpassword !== formData.newpassword) {
+      alert("Password and Confirm Password Must Be Same!");
+      return;
+    }
+
+    
     axios.post(`http://127.0.0.1:3000/adminresetpassword/${token}`,formData)
     .then((res) => {
         if(res.data.flag === 1){
