@@ -806,7 +806,7 @@ app.post('/booking', verifyToken, (req, res) => {
 
         return transporter.sendMail({
             from: `"Eventify" <${process.env.EMAIL_USER}>`,
-            to: "eventifyadmin0312@gmail.com",
+            to: "nac1852sh@gmail.com",
             subject: "New Booking Received",
             html: `
                 <h2>New Booking Alert</h2>
