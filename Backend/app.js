@@ -433,24 +433,26 @@ app.delete('/admin/event/feedbackdelete/:id',(req,res) => {
 })
 
 // Wishlist User Side
-app.post('/event/wishlist',verifyToken,(req,res) => {
+app.post('/event/wishlist', verifyToken, (req, res) => {
     const userId = req.user.id;
-    const {eventId} = req.body;
+    const { eventId } = req.body;
 
-    WishlistTb.findOne({userId,eventId})
-    .then((existingUser) => {
-        if(existingUser){
-            return res.json({flag:0,msg:"You Already Add This Event Into The Wishlist"})
-        }
+    WishlistTb.findOne({ userId, eventId })
+        .then((existingUser) => {
+            if (existingUser) {
+                res.json({ flag: 0, msg: "You Already Added This Event Into The Wishlist" });
+                return null; 
+            }
 
-        return WishlistTb.create({ userId,eventId });
-    }).then((saveUser) => {
-        if(saveUser){
-            return res.json({flag:1,msg:"Your Event Is Added Into The Wishlist!"})
-        }
-
-    }).catch((err) => res.json({flag:0,msg:"Your Event Id Not Addedd To Wishlist! Something Went Wrong!"}))
-})
+            return WishlistTb.create({ userId, eventId });
+        })
+        .then((saveUser) => {
+            if (saveUser) {
+                return res.json({ flag: 1, msg: "Your Event Is Added Into The Wishlist!" });
+            }
+        })
+        .catch((err) => res.json({ flag: 0, msg: "Something Went Wrong!" }));
+});
 
 // Wishlist Display
 app.get('/fetch/wishlist',verifyToken,(req,res) => {
