@@ -26,11 +26,36 @@ function FAQItem({ question, answer }) {
     </div>
   );
 }
+
+// Reusable star display component (supports half stars)
+function StarDisplay({ rating, size = 'text-xl' }) {
+  return (
+    <div className="flex gap-0.5">
+      {[1, 2, 3, 4, 5].map((star) => {
+        const full = star <= Math.floor(rating);
+        const half = !full && star - 0.5 <= rating && rating < star;
+        return (
+          <span key={star} className={`${size} leading-none`}>
+            {full ? (
+              <span className="text-yellow-400">★</span>
+            ) : half ? (
+              <span className="relative inline-block text-gray-300">
+                ★
+                <span className="absolute inset-0 overflow-hidden w-1/2 text-yellow-400">★</span>
+              </span>
+            ) : (
+              <span className="text-gray-300">★</span>
+            )}
+          </span>
+        );
+      })}
+    </div>
+  );
+}
  
 export default function EventDetails() {
   const { eventId } = useParams();
   const [event, setEvent] = useState(null);
-  // const [seatCount, setSeatCount] = useState(1);
   const [relatedevent, setRelatedEvent] = useState([]);
   const [upcomingEvent, setUpcomingEvent] = useState([]);
   const [reviews, setReviews] = useState([]);
@@ -88,7 +113,6 @@ export default function EventDetails() {
     }).then((res) => {
       if(res.data.flag === 1){
         alert(res.data.msg);
- 
         return axios.get(`http://127.0.0.1:3000/event/feedback/${eventId}`);
       }else{
         alert(res.data.msg);
@@ -110,7 +134,6 @@ export default function EventDetails() {
                 axios.post("http://127.0.0.1:3000/refreshToken",{refreshToken})
                 .then((res) => {
                   const newAccessToken = res.data.access_token;
-        
                   localStorage.setItem("AccessToken",newAccessToken);
                   return axios.post("http://127.0.0.1:3000/event/rating",{
                       eventId:eventId,
@@ -139,7 +162,6 @@ export default function EventDetails() {
   }
  
   const handelWishlist = () => {
- 
     const token = localStorage.getItem("AccessToken");
     
         if(!token){
@@ -147,8 +169,6 @@ export default function EventDetails() {
           return;
         }
     
-        // setIsLiked(!isLiked);
-        
         axios.post("http://127.0.0.1:3000/event/wishlist",{eventId:event._id},{
           headers:{
             Authorization:`Bearer ${token}`
@@ -174,7 +194,6 @@ export default function EventDetails() {
                     axios.post("http://127.0.0.1:3000/refreshToken",{refreshToken})
                     .then((res) => {
                       const newAccessToken = res.data.access_token;
-            
                       localStorage.setItem("AccessToken",newAccessToken);
                       return axios.post("http://127.0.0.1:3000/event/wishlist",{eventId:event._id},{
                       headers:{
@@ -247,8 +266,10 @@ export default function EventDetails() {
                     {event.title}
                   </h1>
                   <div className="flex items-center gap-4 flex-wrap">
-                    <span className="bg-yellow-100 text-yellow-700 px-4 py-2 rounded-lg font-bold">
-                      ⭐ {event.rating} ({event.reviews} reviews)
+                    {/* FIX 1: Event header rating - now shows correct stars based on actual rating value */}
+                    <span className="bg-yellow-100 text-yellow-700 px-4 py-2 rounded-lg font-bold flex items-center gap-2">
+                      <StarDisplay rating={event.rating} size="text-base" />
+                      <span>{event.rating} ({event.reviews} reviews)</span>
                     </span>
                     {event.isTrending && (
                       <span className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2 rounded-lg font-bold">
@@ -349,12 +370,11 @@ export default function EventDetails() {
                   reviews.map((review, index) => (
                     <div key={index} className="bg-white border border-gray-100 rounded-lg p-4 shadow-sm">
                       <div className="flex items-center justify-between mb-2">
-                        {/* Accessing name from the populated userId */}
                         <p className="font-bold text-gray-800">{review.userId?.fullName || 'Anonymous'}</p>
-                        <div className="flex gap-1">
-                          {[...Array(5)].map((_, i) => (
-                            <span key={i} className={i < review.rating ? 'text-yellow-400' : 'text-gray-300'}>⭐</span>
-                          ))}
+                        {/* FIX 2: Review display stars - now shows correct number of stars based on actual rating */}
+                        <div className="flex items-center gap-2">
+                          <StarDisplay rating={review.rating} size="text-lg" />
+                          <span className="text-sm text-gray-500 font-medium">{review.rating}/5</span>
                         </div>
                       </div>
                       <p className="text-gray-600">{review.feedback}</p>
@@ -501,19 +521,49 @@ export default function EventDetails() {
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl relative">
             <h2 className="text-2xl font-bold text-gray-800 mb-4">Add Review & Rating</h2>
-            <div className="flex items-center gap-2 mb-4">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <span
-                  key={star}
-                  className={`text-3xl cursor-pointer transition ${star <= (hoverRating || userRating) ? 'text-yellow-400' : 'text-gray-300'}`}
-                  onClick={() => setUserRating(star)}
-                  onMouseEnter={() => setHoverRating(star)}
-                  onMouseLeave={() => setHoverRating(0)}
-                >
-                  ★
-                </span>
-              ))}
+
+            {/* FIX 3: Interactive star input with half-star (0.5) support */}
+            <div className="flex items-center gap-1 mb-4" onMouseLeave={() => setHoverRating(0)}>
+              {[1, 2, 3, 4, 5].map((star) => {
+                const active = hoverRating || userRating;
+                const full = star <= Math.floor(active);
+                const half = !full && star - 0.5 <= active && active < star;
+                return (
+                  <span
+                    key={star}
+                    className="relative text-3xl cursor-pointer select-none inline-block w-8"
+                  >
+                    {/* Left half overlay — triggers 0.5 star */}
+                    <span
+                      className="absolute left-0 top-0 w-1/2 h-full z-10"
+                      onMouseEnter={() => setHoverRating(star - 0.5)}
+                      onClick={() => setUserRating(star - 0.5)}
+                    />
+                    {/* Right half overlay — triggers full star */}
+                    <span
+                      className="absolute right-0 top-0 w-1/2 h-full z-10"
+                      onMouseEnter={() => setHoverRating(star)}
+                      onClick={() => setUserRating(star)}
+                    />
+                    {/* Star visual */}
+                    {full ? (
+                      <span className="text-yellow-400">★</span>
+                    ) : half ? (
+                      <span className="relative inline-block text-gray-300">
+                        ★
+                        <span className="absolute inset-0 overflow-hidden w-1/2 text-yellow-400">★</span>
+                      </span>
+                    ) : (
+                      <span className="text-gray-300">★</span>
+                    )}
+                  </span>
+                );
+              })}
+              <span className="text-sm text-gray-500 ml-2 font-medium">
+                {userRating > 0 ? `${userRating} / 5` : 'Select rating'}
+              </span>
             </div>
+
             <textarea
               rows="4"
               placeholder="Write your review here..."
